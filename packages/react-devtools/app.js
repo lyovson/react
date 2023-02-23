@@ -1,10 +1,8 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
- *
- * @flow
  */
 
 const {app, BrowserWindow} = require('electron'); // Module to create native browser window.
@@ -16,11 +14,11 @@ const projectRoots = argv._;
 
 let mainWindow = null;
 
-app.on('window-all-closed', function() {
+app.on('window-all-closed', function () {
   app.quit();
 });
 
-app.on('ready', function() {
+app.on('ready', function () {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 800,
@@ -40,13 +38,14 @@ app.on('ready', function() {
   }
 
   // https://stackoverflow.com/questions/32402327/
-  mainWindow.webContents.on('new-window', function(event, url) {
+  mainWindow.webContents.on('new-window', function (event, url) {
     event.preventDefault();
     require('electron').shell.openExternal(url);
   });
 
   // and load the index.html of the app.
   mainWindow.loadURL('file://' + __dirname + '/app.html'); // eslint-disable-line no-path-concat
+  // $FlowFixMe[incompatible-use] found when upgrading Flow
   mainWindow.webContents.executeJavaScript(
     // We use this so that RN can keep relative JSX __source filenames
     // but "click to open in editor" still works. js1 passes project roots
@@ -55,7 +54,7 @@ app.on('ready', function() {
   );
 
   // Emitted when the window is closed.
-  mainWindow.on('closed', function() {
+  mainWindow.on('closed', function () {
     mainWindow = null;
   });
 });

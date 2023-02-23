@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -30,10 +30,6 @@ describe('memo', () => {
     act = require('jest-react').act;
     ({Suspense} = React);
   });
-
-  function span(prop) {
-    return {type: 'span', children: [], prop, hidden: false};
-  }
 
   function Text(props) {
     Scheduler.unstable_yieldValue(props.text);
@@ -75,6 +71,7 @@ describe('memo', () => {
     }
     ReactNoop.render(<Outer />);
     expect(() => expect(Scheduler).toFlushWithoutYielding()).toErrorDev([
+      'App: Support for defaultProps will be removed from function components in a future major release. Use JavaScript default parameters instead.',
       'Warning: Function components cannot be given refs. Attempts to access ' +
         'this ref will fail.',
     ]);
@@ -111,7 +108,7 @@ describe('memo', () => {
         expect(Scheduler).toFlushAndYield(['Loading...']);
         await Promise.resolve();
         expect(Scheduler).toFlushAndYield([0]);
-        expect(ReactNoop.getChildren()).toEqual([span(0)]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop={0} />);
 
         // Should bail out because props have not changed
         ReactNoop.render(
@@ -120,7 +117,7 @@ describe('memo', () => {
           </Suspense>,
         );
         expect(Scheduler).toFlushAndYield([]);
-        expect(ReactNoop.getChildren()).toEqual([span(0)]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop={0} />);
 
         // Should update because count prop changed
         ReactNoop.render(
@@ -129,7 +126,7 @@ describe('memo', () => {
           </Suspense>,
         );
         expect(Scheduler).toFlushAndYield([1]);
-        expect(ReactNoop.getChildren()).toEqual([span(1)]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop={1} />);
       });
 
       it("does not bail out if there's a context change", async () => {
@@ -166,17 +163,17 @@ describe('memo', () => {
         expect(Scheduler).toFlushAndYield(['Loading...']);
         await Promise.resolve();
         expect(Scheduler).toFlushAndYield(['Count: 0']);
-        expect(ReactNoop.getChildren()).toEqual([span('Count: 0')]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop="Count: 0" />);
 
         // Should bail out because props have not changed
         ReactNoop.render(<Parent ref={parent} />);
         expect(Scheduler).toFlushAndYield([]);
-        expect(ReactNoop.getChildren()).toEqual([span('Count: 0')]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop="Count: 0" />);
 
         // Should update because there was a context change
         parent.current.setState({count: 1});
         expect(Scheduler).toFlushAndYield(['Count: 1']);
-        expect(ReactNoop.getChildren()).toEqual([span('Count: 1')]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop="Count: 1" />);
       });
 
       it('consistent behavior for reusing props object across different function component types', async () => {
@@ -351,7 +348,7 @@ describe('memo', () => {
         expect(Scheduler).toFlushAndYield(['Loading...']);
         await Promise.resolve();
         expect(Scheduler).toFlushAndYield([0]);
-        expect(ReactNoop.getChildren()).toEqual([span(0)]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop={0} />);
 
         // Should bail out because props have not changed
         ReactNoop.render(
@@ -360,7 +357,7 @@ describe('memo', () => {
           </Suspense>,
         );
         expect(Scheduler).toFlushAndYield(['Old count: 0, New count: 0']);
-        expect(ReactNoop.getChildren()).toEqual([span(0)]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop={0} />);
 
         // Should update because count prop changed
         ReactNoop.render(
@@ -369,7 +366,7 @@ describe('memo', () => {
           </Suspense>,
         );
         expect(Scheduler).toFlushAndYield(['Old count: 0, New count: 1', 1]);
-        expect(ReactNoop.getChildren()).toEqual([span(1)]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop={1} />);
       });
 
       it('supports non-pure class components', async () => {
@@ -389,7 +386,7 @@ describe('memo', () => {
         expect(Scheduler).toFlushAndYield(['Loading...']);
         await Promise.resolve();
         expect(Scheduler).toFlushAndYield(['0!']);
-        expect(ReactNoop.getChildren()).toEqual([span('0!')]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop="0!" />);
 
         // Should bail out because props have not changed
         ReactNoop.render(
@@ -398,7 +395,7 @@ describe('memo', () => {
           </Suspense>,
         );
         expect(Scheduler).toFlushAndYield([]);
-        expect(ReactNoop.getChildren()).toEqual([span('0!')]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop="0!" />);
 
         // Should update because count prop changed
         ReactNoop.render(
@@ -407,7 +404,7 @@ describe('memo', () => {
           </Suspense>,
         );
         expect(Scheduler).toFlushAndYield(['1!']);
-        expect(ReactNoop.getChildren()).toEqual([span('1!')]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop="1!" />);
       });
 
       it('supports defaultProps defined on the memo() return value', async () => {
@@ -441,8 +438,12 @@ describe('memo', () => {
         );
         expect(Scheduler).toFlushAndYield(['Loading...']);
         await Promise.resolve();
-        expect(Scheduler).toFlushAndYield([15]);
-        expect(ReactNoop.getChildren()).toEqual([span(15)]);
+        expect(() => {
+          expect(Scheduler).toFlushAndYield([15]);
+        }).toErrorDev([
+          'Counter: Support for defaultProps will be removed from memo components in a future major release. Use JavaScript default parameters instead.',
+        ]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop={15} />);
 
         // Should bail out because props have not changed
         ReactNoop.render(
@@ -451,7 +452,7 @@ describe('memo', () => {
           </Suspense>,
         );
         expect(Scheduler).toFlushAndYield([]);
-        expect(ReactNoop.getChildren()).toEqual([span(15)]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop={15} />);
 
         // Should update because count prop changed
         ReactNoop.render(
@@ -460,13 +461,11 @@ describe('memo', () => {
           </Suspense>,
         );
         expect(Scheduler).toFlushAndYield([20]);
-        expect(ReactNoop.getChildren()).toEqual([span(20)]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop={20} />);
       });
 
       it('warns if the first argument is undefined', () => {
-        expect(() =>
-          memo(),
-        ).toErrorDev(
+        expect(() => memo()).toErrorDev(
           'memo: The first argument must be a component. Instead ' +
             'received: undefined',
           {withoutStack: true},
@@ -474,9 +473,7 @@ describe('memo', () => {
       });
 
       it('warns if the first argument is null', () => {
-        expect(() =>
-          memo(null),
-        ).toErrorDev(
+        expect(() => memo(null)).toErrorDev(
           'memo: The first argument must be a component. Instead ' +
             'received: null',
           {withoutStack: true},
@@ -552,7 +549,11 @@ describe('memo', () => {
             <Outer />
           </div>,
         );
-        expect(Scheduler).toFlushWithoutYielding();
+        expect(() => {
+          expect(Scheduler).toFlushWithoutYielding();
+        }).toErrorDev([
+          'Inner: Support for defaultProps will be removed from memo components in a future major release. Use JavaScript default parameters instead.',
+        ]);
 
         // Mount
         expect(() => {

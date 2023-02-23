@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -39,6 +39,7 @@ describe('StoreStressConcurrent', () => {
 
   // This is a stress test for the tree mount/update/unmount traversal.
   // It renders different trees that should produce the same output.
+  // @reactVersion >= 18.0
   it('should handle a stress test with different tree operations (Concurrent Mode)', () => {
     let setShowX;
     const A = () => 'a';
@@ -207,6 +208,7 @@ describe('StoreStressConcurrent', () => {
     expect(print(store)).toBe('');
   });
 
+  // @reactVersion >= 18.0
   it('should handle stress test with reordering (Concurrent Mode)', () => {
     const A = () => 'a';
     const B = () => 'b';
@@ -257,61 +259,61 @@ describe('StoreStressConcurrent', () => {
     }
 
     expect(snapshots).toMatchInlineSnapshot(`
-      Array [
+      [
         "[root]
         ▾ <Root>
-            <A key=\\"a\\">",
+            <A key="a">",
         "[root]
         ▾ <Root>
-            <B key=\\"b\\">",
+            <B key="b">",
         "[root]
         ▾ <Root>
-            <C key=\\"c\\">",
+            <C key="c">",
         "[root]
         ▾ <Root>
-            <D key=\\"d\\">",
+            <D key="d">",
         "[root]
         ▾ <Root>
-            <E key=\\"e\\">",
+            <E key="e">",
         "[root]
         ▾ <Root>
-            <A key=\\"a\\">",
+            <A key="a">",
         "[root]
         ▾ <Root>
-            <B key=\\"b\\">",
+            <B key="b">",
         "[root]
         ▾ <Root>
-            <C key=\\"c\\">",
+            <C key="c">",
         "[root]
         ▾ <Root>
-            <D key=\\"d\\">",
+            <D key="d">",
         "[root]
         ▾ <Root>
-            <E key=\\"e\\">",
+            <E key="e">",
         "[root]
         ▾ <Root>
-            <A key=\\"a\\">
-            <B key=\\"b\\">",
+            <A key="a">
+            <B key="b">",
         "[root]
         ▾ <Root>
-            <B key=\\"b\\">
-            <A key=\\"a\\">",
+            <B key="b">
+            <A key="a">",
         "[root]
         ▾ <Root>
-            <B key=\\"b\\">
-            <C key=\\"c\\">",
+            <B key="b">
+            <C key="c">",
         "[root]
         ▾ <Root>
-            <C key=\\"c\\">
-            <B key=\\"b\\">",
+            <C key="c">
+            <B key="b">",
         "[root]
         ▾ <Root>
-            <A key=\\"a\\">
-            <C key=\\"c\\">",
+            <A key="a">
+            <C key="c">",
         "[root]
         ▾ <Root>
-            <C key=\\"c\\">
-            <A key=\\"a\\">",
+            <C key="c">
+            <A key="a">",
       ]
     `);
 
@@ -368,6 +370,7 @@ describe('StoreStressConcurrent', () => {
     }
   });
 
+  // @reactVersion >= 18.0
   it('should handle a stress test for Suspense (Concurrent Mode)', async () => {
     const A = () => 'a';
     const B = () => 'b';
@@ -427,68 +430,68 @@ describe('StoreStressConcurrent', () => {
     }
 
     expect(snapshots).toMatchInlineSnapshot(`
-      Array [
+      [
         "[root]
         ▾ <Root>
             <X>
           ▾ <Suspense>
-              <A key=\\"a\\">
+              <A key="a">
             <Y>",
         "[root]
         ▾ <Root>
             <X>
           ▾ <Suspense>
-              <A key=\\"a\\">
+              <A key="a">
             <Y>",
         "[root]
         ▾ <Root>
             <X>
           ▾ <Suspense>
-              <A key=\\"a\\">
-              <B key=\\"b\\">
-              <C key=\\"c\\">
+              <A key="a">
+              <B key="b">
+              <C key="c">
             <Y>",
         "[root]
         ▾ <Root>
             <X>
           ▾ <Suspense>
-              <C key=\\"c\\">
-              <B key=\\"b\\">
-              <A key=\\"a\\">
+              <C key="c">
+              <B key="b">
+              <A key="a">
             <Y>",
         "[root]
         ▾ <Root>
             <X>
           ▾ <Suspense>
-              <C key=\\"c\\">
-              <A key=\\"a\\">
+              <C key="c">
+              <A key="a">
             <Y>",
         "[root]
         ▾ <Root>
             <X>
           ▾ <Suspense>
-              <C key=\\"c\\">
-              <A key=\\"a\\">
+              <C key="c">
+              <A key="a">
             <Y>",
         "[root]
         ▾ <Root>
             <X>
           ▾ <Suspense>
-              <C key=\\"c\\">
-              <A key=\\"a\\">
+              <C key="c">
+              <A key="a">
             <Y>",
         "[root]
         ▾ <Root>
             <X>
           ▾ <Suspense>
-              <A key=\\"a\\">
-              <B key=\\"b\\">
+              <A key="a">
+              <B key="b">
             <Y>",
         "[root]
         ▾ <Root>
             <X>
           ▾ <Suspense>
-              <A key=\\"a\\">
+              <A key="a">
             <Y>",
         "[root]
         ▾ <Root>
@@ -499,13 +502,13 @@ describe('StoreStressConcurrent', () => {
         ▾ <Root>
             <X>
           ▾ <Suspense>
-              <B key=\\"b\\">
+              <B key="b">
             <Y>",
         "[root]
         ▾ <Root>
             <X>
           ▾ <Suspense>
-              <A key=\\"a\\">
+              <A key="a">
             <Y>",
       ]
     `);
@@ -841,6 +844,7 @@ describe('StoreStressConcurrent', () => {
     }
   });
 
+  // @reactVersion >= 18.0
   it('should handle a stress test for Suspense without type change (Concurrent Mode)', async () => {
     const A = () => 'a';
     const B = () => 'b';
@@ -946,13 +950,13 @@ describe('StoreStressConcurrent', () => {
     }
 
     expect(snapshots).toMatchInlineSnapshot(`
-      Array [
+      [
         "[root]
         ▾ <Root>
             <X>
           ▾ <Suspense>
             ▾ <MaybeSuspend>
-                <A key=\\"a\\">
+                <A key="a">
                 <Z>
             <Y>",
         "[root]
@@ -960,7 +964,7 @@ describe('StoreStressConcurrent', () => {
             <X>
           ▾ <Suspense>
             ▾ <MaybeSuspend>
-                <A key=\\"a\\">
+                <A key="a">
                 <Z>
             <Y>",
         "[root]
@@ -968,9 +972,9 @@ describe('StoreStressConcurrent', () => {
             <X>
           ▾ <Suspense>
             ▾ <MaybeSuspend>
-                <A key=\\"a\\">
-                <B key=\\"b\\">
-                <C key=\\"c\\">
+                <A key="a">
+                <B key="b">
+                <C key="c">
                 <Z>
             <Y>",
         "[root]
@@ -978,9 +982,9 @@ describe('StoreStressConcurrent', () => {
             <X>
           ▾ <Suspense>
             ▾ <MaybeSuspend>
-                <C key=\\"c\\">
-                <B key=\\"b\\">
-                <A key=\\"a\\">
+                <C key="c">
+                <B key="b">
+                <A key="a">
                 <Z>
             <Y>",
         "[root]
@@ -988,8 +992,8 @@ describe('StoreStressConcurrent', () => {
             <X>
           ▾ <Suspense>
             ▾ <MaybeSuspend>
-                <C key=\\"c\\">
-                <A key=\\"a\\">
+                <C key="c">
+                <A key="a">
                 <Z>
             <Y>",
         "[root]
@@ -997,8 +1001,8 @@ describe('StoreStressConcurrent', () => {
             <X>
           ▾ <Suspense>
             ▾ <MaybeSuspend>
-                <C key=\\"c\\">
-                <A key=\\"a\\">
+                <C key="c">
+                <A key="a">
                 <Z>
             <Y>",
         "[root]
@@ -1006,8 +1010,8 @@ describe('StoreStressConcurrent', () => {
             <X>
           ▾ <Suspense>
             ▾ <MaybeSuspend>
-                <C key=\\"c\\">
-                <A key=\\"a\\">
+                <C key="c">
+                <A key="a">
                 <Z>
             <Y>",
         "[root]
@@ -1015,8 +1019,8 @@ describe('StoreStressConcurrent', () => {
             <X>
           ▾ <Suspense>
             ▾ <MaybeSuspend>
-                <A key=\\"a\\">
-                <B key=\\"b\\">
+                <A key="a">
+                <B key="b">
                 <Z>
             <Y>",
         "[root]
@@ -1024,7 +1028,7 @@ describe('StoreStressConcurrent', () => {
             <X>
           ▾ <Suspense>
             ▾ <MaybeSuspend>
-                <A key=\\"a\\">
+                <A key="a">
                 <Z>
             <Y>",
         "[root]
@@ -1039,7 +1043,7 @@ describe('StoreStressConcurrent', () => {
             <X>
           ▾ <Suspense>
             ▾ <MaybeSuspend>
-                <B key=\\"b\\">
+                <B key="b">
                 <Z>
             <Y>",
         "[root]
@@ -1047,7 +1051,7 @@ describe('StoreStressConcurrent', () => {
             <X>
           ▾ <Suspense>
             ▾ <MaybeSuspend>
-                <A key=\\"a\\">
+                <A key="a">
                 <Z>
             <Y>",
       ]

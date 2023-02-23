@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,7 +11,9 @@ import type {JSONValue, ResponseBase} from 'react-client/src/ReactFlightClient';
 
 import type {JSResourceReference} from 'JSResourceReference';
 
-export type ModuleReference<T> = JSResourceReference<T>;
+import type {ClientReferenceMetadata} from 'ReactFlightDOMRelayClientIntegration';
+
+export type ClientReference<T> = JSResourceReference<T>;
 
 import {
   parseModelString,
@@ -19,30 +21,46 @@ import {
 } from 'react-client/src/ReactFlightClient';
 
 export {
-  resolveModuleReference,
   preloadModule,
   requireModule,
 } from 'ReactFlightDOMRelayClientIntegration';
 
+import {resolveClientReference as resolveClientReferenceImpl} from 'ReactFlightDOMRelayClientIntegration';
+
 import isArray from 'shared/isArray';
 
-export type {ModuleMetaData} from 'ReactFlightDOMRelayClientIntegration';
+export type {ClientReferenceMetadata} from 'ReactFlightDOMRelayClientIntegration';
+
+export type BundlerConfig = null;
 
 export type UninitializedModel = JSONValue;
 
 export type Response = ResponseBase;
 
-function parseModelRecursively(response: Response, parentObj, value) {
+export function resolveClientReference<T>(
+  bundlerConfig: BundlerConfig,
+  metadata: ClientReferenceMetadata,
+): ClientReference<T> {
+  return resolveClientReferenceImpl(metadata);
+}
+
+function parseModelRecursively(
+  response: Response,
+  parentObj: {+[key: string]: JSONValue} | $ReadOnlyArray<JSONValue>,
+  key: string,
+  value: JSONValue,
+): $FlowFixMe {
   if (typeof value === 'string') {
-    return parseModelString(response, parentObj, value);
+    return parseModelString(response, parentObj, key, value);
   }
   if (typeof value === 'object' && value !== null) {
     if (isArray(value)) {
-      const parsedValue = [];
+      const parsedValue: Array<$FlowFixMe> = [];
       for (let i = 0; i < value.length; i++) {
         (parsedValue: any)[i] = parseModelRecursively(
           response,
           value,
+          '' + i,
           value[i],
         );
       }
@@ -53,6 +71,7 @@ function parseModelRecursively(response: Response, parentObj, value) {
         (parsedValue: any)[innerKey] = parseModelRecursively(
           response,
           value,
+          innerKey,
           value[innerKey],
         );
       }
@@ -65,5 +84,5 @@ function parseModelRecursively(response: Response, parentObj, value) {
 const dummy = {};
 
 export function parseModel<T>(response: Response, json: UninitializedModel): T {
-  return (parseModelRecursively(response, dummy, json): any);
+  return (parseModelRecursively(response, dummy, '', json): any);
 }

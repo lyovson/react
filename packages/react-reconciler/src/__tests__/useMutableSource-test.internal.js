@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1558,8 +1558,15 @@ describe('useMutableSource', () => {
         expect(Scheduler).toFlushAndYieldThrough(['a0', 'b0']);
         // Mutate in an event. This schedules a subscription update on a, which
         // already mounted, but not b, which hasn't subscribed yet.
-        mutateA('a1');
-        mutateB('b1');
+        if (gate(flags => flags.enableUnifiedSyncLane)) {
+          React.startTransition(() => {
+            mutateA('a1');
+            mutateB('b1');
+          });
+        } else {
+          mutateA('a1');
+          mutateB('b1');
+        }
 
         // Mutate again at lower priority. This will schedule another subscription
         // update on a, but not b. When b mounts and subscriptions, the value it
@@ -1897,7 +1904,7 @@ describe('useMutableSource', () => {
           // Get a new copy of ReactNoop.
           loadModules();
 
-          spyOnDev(console, 'error');
+          spyOnDev(console, 'error').mockImplementation(() => {});
 
           // Use the mutablesource again but with a different renderer.
           ReactNoop.render(
@@ -1910,7 +1917,7 @@ describe('useMutableSource', () => {
           );
           expect(Scheduler).toFlushAndYieldThrough(['c:one']);
 
-          expect(console.error.calls.argsFor(0)[0]).toContain(
+          expect(console.error.mock.calls[0][0]).toContain(
             'Detected multiple renderers concurrently rendering the ' +
               'same mutable source. This is currently unsupported.',
           );
@@ -1978,7 +1985,7 @@ describe('useMutableSource', () => {
           // Get a new copy of ReactNoop.
           loadModules();
 
-          spyOnDev(console, 'error');
+          spyOnDev(console, 'error').mockImplementation(() => {});
 
           // Mutate before the new render reads from the source.
           source.value = 'two';
@@ -1994,7 +2001,7 @@ describe('useMutableSource', () => {
           );
           expect(Scheduler).toFlushAndYieldThrough(['c:two']);
 
-          expect(console.error.calls.argsFor(0)[0]).toContain(
+          expect(console.error.mock.calls[0][0]).toContain(
             'Detected multiple renderers concurrently rendering the ' +
               'same mutable source. This is currently unsupported.',
           );

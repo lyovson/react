@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,7 +18,7 @@ import type {
   Fiber,
   TransitionTracingCallbacks,
 } from 'react-reconciler/src/ReactInternalTypes';
-import type {UpdateQueue} from 'react-reconciler/src/ReactUpdateQueue';
+import type {UpdateQueue} from 'react-reconciler/src/ReactFiberClassUpdateQueue';
 import type {ReactNodeList} from 'shared/ReactTypes';
 import type {RootTag} from 'react-reconciler/src/ReactRootTags';
 
@@ -49,7 +49,7 @@ type Props = {
   top?: null | number,
   ...
 };
-type Instance = {|
+type Instance = {
   type: string,
   id: number,
   parent: number,
@@ -58,17 +58,17 @@ type Instance = {|
   prop: any,
   hidden: boolean,
   context: HostContext,
-|};
-type TextInstance = {|
+};
+type TextInstance = {
   text: string,
   id: number,
   parent: number,
   hidden: boolean,
   context: HostContext,
-|};
+};
 type HostContext = Object;
 type CreateRootOptions = {
-  transitionCallbacks?: TransitionTracingCallbacks,
+  unstable_transitionCallbacks?: TransitionTracingCallbacks,
   ...
 };
 
@@ -272,15 +272,13 @@ function createReactNoop(reconciler: Function, useMutation: boolean) {
   }
 
   const sharedHostConfig = {
+    supportsSingletons: false,
+
     getRootHostContext() {
       return NO_CONTEXT;
     },
 
-    getChildHostContext(
-      parentHostContext: HostContext,
-      type: string,
-      rootcontainerInstance: Container,
-    ) {
+    getChildHostContext(parentHostContext: HostContext, type: string) {
       if (type === 'offscreen') {
         return parentHostContext;
       }
@@ -477,6 +475,13 @@ function createReactNoop(reconciler: Function, useMutation: boolean) {
     logRecoverableError() {
       // no-op
     },
+
+    requestPostPaintCallback(callback) {
+      const endTime = Scheduler.unstable_now();
+      callback(endTime);
+    },
+    prepareRendererToRender() {},
+    resetRendererAfterRender() {},
   };
 
   const hostConfig = useMutation
@@ -784,11 +789,35 @@ function createReactNoop(reconciler: Function, useMutation: boolean) {
     _Scheduler: Scheduler,
 
     getChildren(rootID: string = DEFAULT_ROOT_ID) {
+      throw new Error(
+        'No longer supported due to bad performance when used with `expect()`. ' +
+          'Use `ReactNoop.getChildrenAsJSX()` instead or, if you really need to, `dangerouslyGetChildren` after you carefully considered the warning in its JSDOC.',
+      );
+    },
+
+    getPendingChildren(rootID: string = DEFAULT_ROOT_ID) {
+      throw new Error(
+        'No longer supported due to bad performance when used with `expect()`. ' +
+          'Use `ReactNoop.getPendingChildrenAsJSX()` instead or, if you really need to, `dangerouslyGetPendingChildren` after you carefully considered the warning in its JSDOC.',
+      );
+    },
+
+    /**
+     * Prefer using `getChildrenAsJSX`.
+     * Using the returned children in `.toEqual` has very poor performance on mismatch due to deep equality checking of fiber structures.
+     * Make sure you deeply remove enumerable properties before passing it to `.toEqual`, or, better, use `getChildrenAsJSX` or `toMatchRenderedOutput`.
+     */
+    dangerouslyGetChildren(rootID: string = DEFAULT_ROOT_ID) {
       const container = rootContainers.get(rootID);
       return getChildren(container);
     },
 
-    getPendingChildren(rootID: string = DEFAULT_ROOT_ID) {
+    /**
+     * Prefer using `getPendingChildrenAsJSX`.
+     * Using the returned children in `.toEqual` has very poor performance on mismatch due to deep equality checking of fiber structures.
+     * Make sure you deeply remove enumerable properties before passing it to `.toEqual`, or, better, use `getChildrenAsJSX` or `toMatchRenderedOutput`.
+     */
+    dangerouslyGetPendingChildren(rootID: string = DEFAULT_ROOT_ID) {
       const container = rootContainers.get(rootID);
       return getPendingChildren(container);
     },
@@ -806,6 +835,7 @@ function createReactNoop(reconciler: Function, useMutation: boolean) {
           false,
           '',
           onRecoverableError,
+          null,
         );
         roots.set(rootID, root);
       }
@@ -827,8 +857,8 @@ function createReactNoop(reconciler: Function, useMutation: boolean) {
         false,
         '',
         onRecoverableError,
-        options && options.transitionCallbacks
-          ? options.transitionCallbacks
+        options && options.unstable_transitionCallbacks
+          ? options.unstable_transitionCallbacks
           : null,
       );
       return {
@@ -859,6 +889,7 @@ function createReactNoop(reconciler: Function, useMutation: boolean) {
         false,
         '',
         onRecoverableError,
+        null,
       );
       return {
         _Scheduler: Scheduler,
@@ -952,17 +983,15 @@ function createReactNoop(reconciler: Function, useMutation: boolean) {
       return Scheduler.unstable_clearYields();
     },
 
-    flushWithHostCounters(
-      fn: () => void,
-    ):
-      | {|
+    flushWithHostCounters(fn: () => void):
+      | {
           hostDiffCounter: number,
           hostUpdateCounter: number,
-        |}
-      | {|
+        }
+      | {
           hostDiffCounter: number,
           hostCloneCounter: number,
-        |} {
+        } {
       hostDiffCounter = 0;
       hostUpdateCounter = 0;
       hostCloneCounter = 0;

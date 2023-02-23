@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -13,7 +13,7 @@ import isArray from 'react-devtools-shared/src/isArray';
 const cachedStyleNameToValueMap: Map<string, string> = new Map();
 
 export function getStyleXData(data: any): StyleXPlugin {
-  const sources = new Set();
+  const sources = new Set<string>();
   const resolvedStyles = {};
 
   crawlData(data, sources, resolvedStyles);
@@ -92,7 +92,9 @@ function getPropertyValueForStyleName(styleName: string): string | null {
     ]: any): CSSStyleSheet);
     // $FlowFixMe Flow doesn't konw about these properties
     const rules = styleSheet.rules || styleSheet.cssRules;
+    // $FlowFixMe `rules` is mixed
     for (let ruleIndex = 0; ruleIndex < rules.length; ruleIndex++) {
+      // $FlowFixMe `rules` is mixed
       const rule = rules[ruleIndex];
       // $FlowFixMe Flow doesn't konw about these properties
       const {cssText, selectorText, style} = rule;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -185,14 +185,6 @@ describe('ReactSuspenseEffectsSemantics', () => {
 
   const resolveText = resolveMostRecentTextCache;
 
-  function span(prop, children = []) {
-    return {type: 'span', children, prop, hidden: false};
-  }
-
-  function spanHidden(prop, children = []) {
-    return {type: 'span', children, prop, hidden: true};
-  }
-
   function advanceTimers(ms) {
     // Note: This advances Jest's virtual time but not React's. Use
     // ReactNoop.expire for that.
@@ -206,7 +198,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
   }
 
   describe('when a component suspends during initial mount', () => {
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should not change behavior in concurrent mode', async () => {
       class ClassText extends React.Component {
         componentDidMount() {
@@ -278,10 +270,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Outside create passive',
         'App create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Fallback'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Fallback" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Resolving the suspended resource should
       await act(async () => {
@@ -299,12 +293,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Inside:Before create passive',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside:Before'),
-        span('Async'),
-        span('Inside:After'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" />
+          <span prop="Async" />
+          <span prop="Inside:After" />
+          <span prop="Outside" />
+        </>,
+      );
 
       await act(async () => {
         ReactNoop.render(null);
@@ -320,10 +316,10 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'AsyncText:Async destroy passive',
         'Text:Outside destroy passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([]);
+      expect(ReactNoop).toMatchRenderedOutput(null);
     });
 
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should not change behavior in sync', async () => {
       class ClassText extends React.Component {
         componentDidMount() {
@@ -398,12 +394,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Outside create passive',
         'App create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Inside:Before'),
-        spanHidden('Inside:After'),
-        span('Fallback'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" hidden={true} />
+          <span prop="Inside:After" hidden={true} />
+          <span prop="Fallback" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Resolving the suspended resource should
       await act(async () => {
@@ -416,12 +414,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback destroy passive',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside:Before'),
-        span('Async'),
-        span('Inside:After'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" />
+          <span prop="Async" />
+          <span prop="Inside:After" />
+          <span prop="Outside" />
+        </>,
+      );
 
       await act(async () => {
         ReactNoop.renderLegacySyncRoot(null);
@@ -437,12 +437,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'AsyncText:Async destroy passive',
         'Text:Outside destroy passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([]);
+      expect(ReactNoop).toMatchRenderedOutput(null);
     });
   });
 
   describe('layout effects within a tree that re-suspends in an update', () => {
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should not be destroyed or recreated in legacy roots', async () => {
       function App({children = null}) {
         Scheduler.unstable_yieldValue('App render');
@@ -488,11 +488,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Outside create passive',
         'App create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside:Before'),
-        span('Inside:After'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" />
+          <span prop="Inside:After" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Schedule an update that causes React to suspend.
       act(() => {
@@ -512,23 +514,27 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback create layout',
         'Text:Fallback create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Inside:Before'),
-        spanHidden('Inside:After'),
-        span('Fallback'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" hidden={true} />
+          <span prop="Inside:After" hidden={true} />
+          <span prop="Fallback" />
+          <span prop="Outside" />
+        </>,
+      );
 
       await advanceTimers(1000);
 
       // Noop since sync root has already committed
       expect(Scheduler).toHaveYielded([]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Inside:Before'),
-        spanHidden('Inside:After'),
-        span('Fallback'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" hidden={true} />
+          <span prop="Inside:After" hidden={true} />
+          <span prop="Fallback" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -541,12 +547,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback destroy passive',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside:Before'),
-        span('Async'),
-        span('Inside:After'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" />
+          <span prop="Async" />
+          <span prop="Inside:After" />
+          <span prop="Outside" />
+        </>,
+      );
 
       await act(async () => {
         ReactNoop.renderLegacySyncRoot(null);
@@ -565,8 +573,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
       ]);
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be destroyed and recreated for function components', async () => {
       function App({children = null}) {
         Scheduler.unstable_yieldValue('App render');
@@ -611,11 +618,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Outside create passive',
         'App create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside:Before'),
-        span('Inside:After'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" />
+          <span prop="Inside:After" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Schedule an update that causes React to suspend.
       act(() => {
@@ -633,11 +642,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback render',
         'Text:Outside render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside:Before'),
-        span('Inside:After'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" />
+          <span prop="Inside:After" />
+          <span prop="Outside" />
+        </>,
+      );
 
       await advanceTimers(1000);
 
@@ -648,12 +659,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback create layout',
       ]);
       expect(Scheduler).toFlushAndYield(['Text:Fallback create passive']);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Inside:Before'),
-        spanHidden('Inside:After'),
-        span('Fallback'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" hidden={true} />
+          <span prop="Inside:After" hidden={true} />
+          <span prop="Fallback" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -670,12 +683,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback destroy passive',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside:Before'),
-        span('Async'),
-        span('Inside:After'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" />
+          <span prop="Async" />
+          <span prop="Inside:After" />
+          <span prop="Outside" />
+        </>,
+      );
 
       await act(async () => {
         ReactNoop.render(null);
@@ -694,8 +709,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
       ]);
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be destroyed and recreated for class components', async () => {
       class ClassText extends React.Component {
         componentDidMount() {
@@ -760,11 +774,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'App create layout',
         'App create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside:Before'),
-        span('Inside:After'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" />
+          <span prop="Inside:After" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Schedule an update that causes React to suspend.
       act(() => {
@@ -782,11 +798,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'ClassText:Fallback render',
         'ClassText:Outside render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside:Before'),
-        span('Inside:After'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" />
+          <span prop="Inside:After" />
+          <span prop="Outside" />
+        </>,
+      );
 
       await advanceTimers(1000);
 
@@ -797,12 +815,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'ClassText:Fallback componentDidMount',
         'ClassText:Outside componentDidUpdate',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Inside:Before'),
-        spanHidden('Inside:After'),
-        span('Fallback'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" hidden={true} />
+          <span prop="Inside:After" hidden={true} />
+          <span prop="Fallback" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -818,13 +838,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'ClassText:Inside:After componentDidMount',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside:Before'),
-        span('Async'),
-        span('Inside:After'),
-        span('Outside'),
-      ]);
-
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside:Before" />
+          <span prop="Async" />
+          <span prop="Inside:After" />
+          <span prop="Outside" />
+        </>,
+      );
       await act(async () => {
         ReactNoop.render(null);
       });
@@ -839,8 +860,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
       ]);
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be destroyed and recreated when nested below host components', async () => {
       function App({children = null}) {
         Scheduler.unstable_yieldValue('App render');
@@ -881,7 +901,11 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Outer create passive',
         'App create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Outer', [span('Inner')])]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <span prop="Outer">
+          <span prop="Inner" />
+        </span>,
+      );
 
       // Schedule an update that causes React to suspend.
       act(() => {
@@ -898,7 +922,11 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Inner render',
         'Text:Fallback render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Outer', [span('Inner')])]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <span prop="Outer">
+          <span prop="Inner" />
+        </span>,
+      );
 
       await advanceTimers(1000);
 
@@ -909,10 +937,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback create layout',
       ]);
       expect(Scheduler).toFlushAndYield(['Text:Fallback create passive']);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Outer', [span('Inner')]),
-        span('Fallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span hidden={true} prop="Outer">
+            <span prop="Inner" />
+          </span>
+          <span prop="Fallback" />
+        </>,
+      );
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -929,10 +961,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback destroy passive',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Async'),
-        span('Outer', [span('Inner')]),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Async" />
+          <span prop="Outer">
+            <span prop="Inner" />
+          </span>
+        </>,
+      );
 
       await act(async () => {
         ReactNoop.render(null);
@@ -949,8 +985,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
       ]);
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be destroyed and recreated even if there is a bailout because of memoization', async () => {
       const MemoizedText = React.memo(Text, () => true);
 
@@ -993,9 +1028,11 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Outer create passive',
         'App create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Outer', [span('MemoizedInner')]),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <span prop="Outer">
+          <span prop="MemoizedInner" />
+        </span>,
+      );
 
       // Schedule an update that causes React to suspend.
       act(() => {
@@ -1012,9 +1049,11 @@ describe('ReactSuspenseEffectsSemantics', () => {
         // Text:MemoizedInner is memoized
         'Text:Fallback render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Outer', [span('MemoizedInner')]),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <span prop="Outer">
+          <span prop="MemoizedInner" />
+        </span>,
+      );
 
       await advanceTimers(1000);
 
@@ -1026,10 +1065,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback create layout',
       ]);
       expect(Scheduler).toFlushAndYield(['Text:Fallback create passive']);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Outer', [span('MemoizedInner')]),
-        span('Fallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span hidden={true} prop="Outer">
+            <span prop="MemoizedInner" />
+          </span>
+          <span prop="Fallback" />
+        </>,
+      );
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -1045,10 +1088,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback destroy passive',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Async'),
-        span('Outer', [span('MemoizedInner')]),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Async" />
+          <span prop="Outer">
+            <span prop="MemoizedInner" />
+          </span>
+        </>,
+      );
 
       await act(async () => {
         ReactNoop.render(null);
@@ -1065,8 +1112,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
       ]);
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should respect nested suspense boundaries', async () => {
       function App({innerChildren = null, outerChildren = null}) {
         return (
@@ -1093,7 +1139,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Outer create passive',
         'Text:Inner create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Outer'), span('Inner')]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" />
+          <span prop="Inner" />
+        </>,
+      );
 
       // Suspend the inner Suspense subtree (only inner effects should be destroyed)
       act(() => {
@@ -1111,11 +1162,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:InnerFallback create layout',
       ]);
       expect(Scheduler).toFlushAndYield(['Text:InnerFallback create passive']);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Outer'),
-        spanHidden('Inner'),
-        span('InnerFallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" />
+          <span prop="Inner" hidden={true} />
+          <span prop="InnerFallback" />
+        </>,
+      );
 
       // Suspend the outer Suspense subtree (outer effects and inner fallback effects should be destroyed)
       // (This check also ensures we don't destroy effects for mounted inner fallback.)
@@ -1140,12 +1193,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:OuterFallback create layout',
       ]);
       expect(Scheduler).toFlushAndYield(['Text:OuterFallback create passive']);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Outer'),
-        spanHidden('Inner'),
-        spanHidden('InnerFallback'),
-        span('OuterFallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" hidden={true} />
+          <span prop="Inner" hidden={true} />
+          <span prop="InnerFallback" hidden={true} />
+          <span prop="OuterFallback" />
+        </>,
+      );
 
       // Show the inner Suspense subtree (no effects should be recreated)
       await act(async () => {
@@ -1157,12 +1212,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Inner render',
         'AsyncText:InnerAsync_1 render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Outer'),
-        spanHidden('Inner'),
-        spanHidden('InnerFallback'),
-        span('OuterFallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" hidden={true} />
+          <span prop="Inner" hidden={true} />
+          <span prop="InnerFallback" hidden={true} />
+          <span prop="OuterFallback" />
+        </>,
+      );
 
       // Suspend the inner Suspense subtree (no effects should be destroyed)
       act(() => {
@@ -1182,12 +1239,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:InnerFallback render',
         'Text:OuterFallback render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Outer'),
-        spanHidden('Inner'),
-        spanHidden('InnerFallback'),
-        span('OuterFallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" hidden={true} />
+          <span prop="Inner" hidden={true} />
+          <span prop="InnerFallback" hidden={true} />
+          <span prop="OuterFallback" />
+        </>,
+      );
 
       // Show the outer Suspense subtree (only outer effects should be recreated)
       await act(async () => {
@@ -1206,12 +1265,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:OuterFallback destroy passive',
         'AsyncText:OuterAsync_1 create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Outer'),
-        span('OuterAsync_1'),
-        spanHidden('Inner'),
-        span('InnerFallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" />
+          <span prop="OuterAsync_1" />
+          <span prop="Inner" hidden={true} />
+          <span prop="InnerFallback" />
+        </>,
+      );
 
       // Show the inner Suspense subtree (only inner effects should be recreated)
       await act(async () => {
@@ -1226,12 +1287,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:InnerFallback destroy passive',
         'AsyncText:InnerAsync_2 create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Outer'),
-        span('OuterAsync_1'),
-        span('Inner'),
-        span('InnerAsync_2'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" />
+          <span prop="OuterAsync_1" />
+          <span prop="Inner" />
+          <span prop="InnerAsync_2" />
+        </>,
+      );
 
       // Suspend the outer Suspense subtree (all effects should be destroyed)
       act(() => {
@@ -1255,13 +1318,15 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'AsyncText:InnerAsync_2 destroy layout',
         'Text:OuterFallback create layout',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Outer'),
-        spanHidden('OuterAsync_1'),
-        spanHidden('Inner'),
-        spanHidden('InnerAsync_2'),
-        span('OuterFallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" hidden={true} />
+          <span prop="OuterAsync_1" hidden={true} />
+          <span prop="Inner" hidden={true} />
+          <span prop="InnerAsync_2" hidden={true} />
+          <span prop="OuterFallback" />
+        </>,
+      );
 
       // Show the outer Suspense subtree (all effects should be recreated)
       await act(async () => {
@@ -1280,16 +1345,17 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'AsyncText:InnerAsync_2 create layout',
         'Text:OuterFallback destroy passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Outer'),
-        span('OuterAsync_2'),
-        span('Inner'),
-        span('InnerAsync_2'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" />
+          <span prop="OuterAsync_2" />
+          <span prop="Inner" />
+          <span prop="InnerAsync_2" />
+        </>,
+      );
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should show nested host nodes if multiple boundaries resolve at the same time', async () => {
       function App({innerChildren = null, outerChildren = null}) {
         return (
@@ -1316,7 +1382,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Outer create passive',
         'Text:Inner create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Outer'), span('Inner')]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" />
+          <span prop="Inner" />
+        </>,
+      );
 
       // Suspend the inner Suspense subtree (only inner effects should be destroyed)
       act(() => {
@@ -1334,11 +1405,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:InnerFallback create layout',
       ]);
       expect(Scheduler).toFlushAndYield(['Text:InnerFallback create passive']);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Outer'),
-        spanHidden('Inner'),
-        span('InnerFallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" />
+          <span prop="Inner" hidden={true} />
+          <span prop="InnerFallback" />
+        </>,
+      );
 
       // Suspend the outer Suspense subtree (outer effects and inner fallback effects should be destroyed)
       // (This check also ensures we don't destroy effects for mounted inner fallback.)
@@ -1363,12 +1436,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:OuterFallback create layout',
       ]);
       expect(Scheduler).toFlushAndYield(['Text:OuterFallback create passive']);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Outer'),
-        spanHidden('Inner'),
-        spanHidden('InnerFallback'),
-        span('OuterFallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" hidden={true} />
+          <span prop="Inner" hidden={true} />
+          <span prop="InnerFallback" hidden={true} />
+          <span prop="OuterFallback" />
+        </>,
+      );
 
       // Resolve both suspended trees.
       await act(async () => {
@@ -1390,16 +1465,17 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'AsyncText:OuterAsync_1 create passive',
         'AsyncText:InnerAsync_1 create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Outer'),
-        span('OuterAsync_1'),
-        span('Inner'),
-        span('InnerAsync_1'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Outer" />
+          <span prop="OuterAsync_1" />
+          <span prop="Inner" />
+          <span prop="InnerAsync_1" />
+        </>,
+      );
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be cleaned up inside of a fallback that suspends', async () => {
       function App({fallbackChildren = null, outerChildren = null}) {
         return (
@@ -1434,10 +1510,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Inside create passive',
         'Text:Outside create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Suspend the outer shell
       act(() => {
@@ -1452,10 +1530,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback:Outside render',
         'Text:Outside render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Timing out should commit the fallback and destroy inner layout effects.
       await advanceTimers(1000);
@@ -1468,12 +1548,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback:Inside create passive',
         'Text:Fallback:Outside create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Inside'),
-        span('Fallback:Inside'),
-        span('Fallback:Outside'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" hidden={true} />
+          <span prop="Fallback:Inside" />
+          <span prop="Fallback:Outside" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Suspend the fallback and verify that it's effects get cleaned up as well
       act(() => {
@@ -1493,12 +1575,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback:Outside render',
         'Text:Outside render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Inside'),
-        span('Fallback:Inside'),
-        span('Fallback:Outside'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" hidden={true} />
+          <span prop="Fallback:Inside" />
+          <span prop="Fallback:Outside" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Timing out should commit the inner fallback and destroy outer fallback layout effects.
       await advanceTimers(1000);
@@ -1509,13 +1593,15 @@ describe('ReactSuspenseEffectsSemantics', () => {
       expect(Scheduler).toFlushAndYield([
         'Text:Fallback:Fallback create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Inside'),
-        spanHidden('Fallback:Inside'),
-        span('Fallback:Fallback'),
-        span('Fallback:Outside'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" hidden={true} />
+          <span prop="Fallback:Inside" hidden={true} />
+          <span prop="Fallback:Fallback" />
+          <span prop="Fallback:Outside" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Resolving both resources should cleanup fallback effects and recreate main effects
       await act(async () => {
@@ -1534,15 +1620,16 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback:Outside destroy passive',
         'AsyncText:OutsideAsync create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside'),
-        span('OutsideAsync'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" />
+          <span prop="OutsideAsync" />
+          <span prop="Outside" />
+        </>,
+      );
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be cleaned up inside of a fallback that suspends (alternate)', async () => {
       function App({fallbackChildren = null, outerChildren = null}) {
         return (
@@ -1577,10 +1664,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Inside create passive',
         'Text:Outside create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Suspend both the outer boundary and the fallback
       act(() => {
@@ -1608,12 +1697,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback:Fallback create passive',
         'Text:Fallback:Outside create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Inside'),
-        span('Fallback:Fallback'),
-        span('Fallback:Outside'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" hidden={true} />
+          <span prop="Fallback:Fallback" />
+          <span prop="Fallback:Outside" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Resolving the inside fallback
       await act(async () => {
@@ -1629,13 +1720,15 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback:Inside create passive',
         'AsyncText:FallbackAsync create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Inside'),
-        span('Fallback:Inside'),
-        span('FallbackAsync'),
-        span('Fallback:Outside'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" hidden={true} />
+          <span prop="Fallback:Inside" />
+          <span prop="FallbackAsync" />
+          <span prop="Fallback:Outside" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Resolving the outer fallback only
       await act(async () => {
@@ -1654,15 +1747,16 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback:Outside destroy passive',
         'AsyncText:OutsideAsync create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside'),
-        span('OutsideAsync'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" />
+          <span prop="OutsideAsync" />
+          <span prop="Outside" />
+        </>,
+      );
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be cleaned up deeper inside of a subtree that suspends', async () => {
       function ConditionalSuspense({shouldSuspend}) {
         if (shouldSuspend) {
@@ -1694,10 +1788,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Inside create passive',
         'Text:Outside create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Suspending a component in the middle of the tree
       // should still properly cleanup effects deeper in the tree
@@ -1709,10 +1805,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback render',
         'Text:Outside render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Timing out should commit the inner fallback and destroy outer fallback layout effects.
       await advanceTimers(1000);
@@ -1721,11 +1819,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback create layout',
       ]);
       expect(Scheduler).toFlushAndYield(['Text:Fallback create passive']);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Inside'),
-        span('Fallback'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" hidden={true} />
+          <span prop="Fallback" />
+          <span prop="Outside" />
+        </>,
+      );
 
       // Resolving should cleanup.
       await act(async () => {
@@ -1737,15 +1837,16 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Inside create layout',
         'Text:Fallback destroy passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Inside'),
-        span('Outside'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Inside" />
+          <span prop="Outside" />
+        </>,
+      );
     });
 
     describe('that throw errors', () => {
-      // @gate enableSuspenseLayoutEffectSemantics
-      // @gate enableCache
+      // @gate enableLegacyCache
       it('are properly handled for componentDidMount', async () => {
         let componentDidMountShouldThrow = false;
 
@@ -1807,11 +1908,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Inside create passive',
           'Text:Outside create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([
-          span('ThrowsInDidMount'),
-          span('Inside'),
-          span('Outside'),
-        ]);
+        expect(ReactNoop).toMatchRenderedOutput(
+          <>
+            <span prop="ThrowsInDidMount" />
+            <span prop="Inside" />
+            <span prop="Outside" />
+          </>,
+        );
 
         // Schedule an update that causes React to suspend.
         await act(async () => {
@@ -1836,12 +1939,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Fallback create layout',
           'Text:Fallback create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([
-          spanHidden('ThrowsInDidMount'),
-          spanHidden('Inside'),
-          span('Fallback'),
-          span('Outside'),
-        ]);
+        expect(ReactNoop).toMatchRenderedOutput(
+          <>
+            <span prop="ThrowsInDidMount" hidden={true} />
+            <span prop="Inside" hidden={true} />
+            <span prop="Fallback" />
+            <span prop="Outside" />
+          </>,
+        );
 
         // Resolve the pending suspense and throw
         componentDidMountShouldThrow = true;
@@ -1880,11 +1985,10 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Error create layout',
           'Text:Error create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([span('Error')]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop="Error" />);
       });
 
-      // @gate enableSuspenseLayoutEffectSemantics
-      // @gate enableCache
+      // @gate enableLegacyCache
       it('are properly handled for componentWillUnmount', async () => {
         class ThrowsInWillUnmount extends React.Component {
           componentDidMount() {
@@ -1944,11 +2048,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Inside create passive',
           'Text:Outside create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([
-          span('ThrowsInWillUnmount'),
-          span('Inside'),
-          span('Outside'),
-        ]);
+        expect(ReactNoop).toMatchRenderedOutput(
+          <>
+            <span prop="ThrowsInWillUnmount" />
+            <span prop="Inside" />
+            <span prop="Outside" />
+          </>,
+        );
 
         // Schedule an update that suspends and triggers our error code.
         await act(async () => {
@@ -1992,11 +2098,10 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Error create layout',
           'Text:Error create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([span('Error')]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop="Error" />);
       });
 
-      // @gate enableSuspenseLayoutEffectSemantics
-      // @gate enableCache
+      // @gate enableLegacyCache
       // @gate replayFailedUnitOfWorkWithInvokeGuardedCallback
       it('are properly handled for layout effect creation', async () => {
         let useLayoutEffectShouldThrow = false;
@@ -2059,11 +2164,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Inside create passive',
           'Text:Outside create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([
-          span('ThrowsInLayoutEffect'),
-          span('Inside'),
-          span('Outside'),
-        ]);
+        expect(ReactNoop).toMatchRenderedOutput(
+          <>
+            <span prop="ThrowsInLayoutEffect" />
+            <span prop="Inside" />
+            <span prop="Outside" />
+          </>,
+        );
 
         // Schedule an update that causes React to suspend.
         await act(async () => {
@@ -2088,12 +2195,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Fallback create layout',
           'Text:Fallback create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([
-          spanHidden('ThrowsInLayoutEffect'),
-          spanHidden('Inside'),
-          span('Fallback'),
-          span('Outside'),
-        ]);
+        expect(ReactNoop).toMatchRenderedOutput(
+          <>
+            <span prop="ThrowsInLayoutEffect" hidden={true} />
+            <span prop="Inside" hidden={true} />
+            <span prop="Fallback" />
+            <span prop="Outside" />
+          </>,
+        );
 
         // Resolve the pending suspense and throw
         useLayoutEffectShouldThrow = true;
@@ -2132,11 +2241,10 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Error create layout',
           'Text:Error create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([span('Error')]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop="Error" />);
       });
 
-      // @gate enableSuspenseLayoutEffectSemantics
-      // @gate enableCache
+      // @gate enableLegacyCache
       // @gate replayFailedUnitOfWorkWithInvokeGuardedCallback
       it('are properly handled for layout effect destruction', async () => {
         function ThrowsInLayoutEffectDestroy() {
@@ -2195,11 +2303,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Inside create passive',
           'Text:Outside create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([
-          span('ThrowsInLayoutEffectDestroy'),
-          span('Inside'),
-          span('Outside'),
-        ]);
+        expect(ReactNoop).toMatchRenderedOutput(
+          <>
+            <span prop="ThrowsInLayoutEffectDestroy" />
+            <span prop="Inside" />
+            <span prop="Outside" />
+          </>,
+        );
 
         // Schedule an update that suspends and triggers our error code.
         await act(async () => {
@@ -2243,12 +2353,11 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Error create layout',
           'Text:Error create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([span('Error')]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop="Error" />);
       });
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be only destroy layout effects once if a tree suspends in multiple places', async () => {
       class ClassText extends React.Component {
         componentDidMount() {
@@ -2292,10 +2401,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'ClassText:Class componentDidMount',
         'Text:Function create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Function'),
-        span('Class'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Function" />
+          <span prop="Class" />
+        </>,
+      );
 
       // Schedule an update that causes React to suspend.
       act(() => {
@@ -2313,10 +2424,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'ClassText:Class render',
         'ClassText:Fallback render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Function'),
-        span('Class'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Function" />
+          <span prop="Class" />
+        </>,
+      );
 
       await advanceTimers(1000);
 
@@ -2326,11 +2439,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'ClassText:Class componentWillUnmount',
         'ClassText:Fallback componentDidMount',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Function'),
-        spanHidden('Class'),
-        span('Fallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Function" hidden={true} />
+          <span prop="Class" hidden={true} />
+          <span prop="Fallback" />
+        </>,
+      );
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -2342,11 +2457,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Suspend:Async_2',
         'ClassText:Class render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Function'),
-        spanHidden('Class'),
-        span('Fallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Function" hidden={true} />
+          <span prop="Class" hidden={true} />
+          <span prop="Fallback" />
+        </>,
+      );
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -2365,12 +2482,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'AsyncText:Async_1 create passive',
         'AsyncText:Async_2 create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Function'),
-        span('Async_1'),
-        span('Async_2'),
-        span('Class'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Function" />
+          <span prop="Async_1" />
+          <span prop="Async_2" />
+          <span prop="Class" />
+        </>,
+      );
 
       await act(async () => {
         ReactNoop.render(null);
@@ -2386,8 +2505,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
       ]);
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be only destroy layout effects once if a component suspends multiple times', async () => {
       class ClassText extends React.Component {
         componentDidMount() {
@@ -2442,11 +2560,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'ClassText:Class componentDidMount',
         'Text:Function create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Function'),
-        span('Suspender'),
-        span('Class'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Function" />
+          <span prop="Suspender" />
+          <span prop="Class" />
+        </>,
+      );
 
       // Schedule an update that causes React to suspend.
       textToRead = 'A';
@@ -2460,11 +2580,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'ClassText:Class render',
         'ClassText:Fallback render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Function'),
-        span('Suspender'),
-        span('Class'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Function" />
+          <span prop="Suspender" />
+          <span prop="Class" />
+        </>,
+      );
 
       await advanceTimers(1000);
 
@@ -2474,12 +2596,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'ClassText:Class componentWillUnmount',
         'ClassText:Fallback componentDidMount',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Function'),
-        spanHidden('Suspender'),
-        spanHidden('Class'),
-        span('Fallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Function" hidden={true} />
+          <span prop="Suspender" hidden={true} />
+          <span prop="Class" hidden={true} />
+          <span prop="Fallback" />
+        </>,
+      );
 
       // Resolving the suspended resource should re-create inner layout effects.
       textToRead = 'B';
@@ -2492,12 +2616,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Suspend:B',
         'ClassText:Class render',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('Function'),
-        spanHidden('Suspender'),
-        spanHidden('Class'),
-        span('Fallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Function" hidden={true} />
+          <span prop="Suspender" hidden={true} />
+          <span prop="Class" hidden={true} />
+          <span prop="Fallback" />
+        </>,
+      );
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -2511,11 +2637,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Function create layout',
         'ClassText:Class componentDidMount',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Function'),
-        span('Suspender'),
-        span('Class'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Function" />
+          <span prop="Suspender" />
+          <span prop="Class" />
+        </>,
+      );
 
       await act(async () => {
         ReactNoop.render(null);
@@ -2544,13 +2672,15 @@ describe('ReactSuspenseEffectsSemantics', () => {
 
       React.useLayoutEffect(() => {
         Scheduler.unstable_yieldValue(
-          `RefCheckerOuter create layout refObject? ${refObject.current !=
-            null} refCallback? ${manualRef.current != null}`,
+          `RefCheckerOuter create layout refObject? ${
+            refObject.current != null
+          } refCallback? ${manualRef.current != null}`,
         );
         return () => {
           Scheduler.unstable_yieldValue(
-            `RefCheckerOuter destroy layout refObject? ${refObject.current !=
-              null} refCallback? ${manualRef.current != null}`,
+            `RefCheckerOuter destroy layout refObject? ${
+              refObject.current != null
+            } refCallback? ${manualRef.current != null}`,
           );
         };
       }, []);
@@ -2571,20 +2701,22 @@ describe('ReactSuspenseEffectsSemantics', () => {
       Scheduler.unstable_yieldValue(`RefCheckerInner:${text} render`);
       React.useLayoutEffect(() => {
         Scheduler.unstable_yieldValue(
-          `RefCheckerInner:${text} create layout ref? ${forwardedRef.current !=
-            null}`,
+          `RefCheckerInner:${text} create layout ref? ${
+            forwardedRef.current != null
+          }`,
         );
         return () => {
           Scheduler.unstable_yieldValue(
-            `RefCheckerInner:${text} destroy layout ref? ${forwardedRef.current !=
-              null}`,
+            `RefCheckerInner:${text} destroy layout ref? ${
+              forwardedRef.current != null
+            }`,
           );
         };
       }, []);
       return null;
     }
 
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should not be cleared within legacy roots', async () => {
       class ClassComponent extends React.Component {
         render() {
@@ -2620,7 +2752,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefCheckerOuter refCallback value? true',
         'RefCheckerOuter create layout refObject? true refCallback? true',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([]);
+      expect(ReactNoop).toMatchRenderedOutput(null);
 
       // Suspend the inner Suspense subtree (only inner effects should be destroyed)
       act(() => {
@@ -2641,7 +2773,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback create layout',
         'Text:Fallback create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Fallback')]);
+      expect(ReactNoop).toMatchRenderedOutput(<span prop="Fallback" />);
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -2654,7 +2786,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback destroy passive',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Async')]);
+      expect(ReactNoop).toMatchRenderedOutput(<span prop="Async" />);
 
       await act(async () => {
         ReactNoop.renderLegacySyncRoot(null);
@@ -2667,11 +2799,10 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefCheckerInner:refCallback destroy layout ref? false',
         'AsyncText:Async destroy passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([]);
+      expect(ReactNoop).toMatchRenderedOutput(null);
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be cleared and reset for host components', async () => {
       function App({children}) {
         Scheduler.unstable_yieldValue(`App render`);
@@ -2697,10 +2828,12 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefCheckerOuter refCallback value? true',
         'RefCheckerOuter create layout refObject? true refCallback? true',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('refObject'),
-        span('refCallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="refObject" />
+          <span prop="refCallback" />
+        </>,
+      );
 
       // Suspend the inner Suspense subtree (only inner effects should be destroyed)
       act(() => {
@@ -2722,11 +2855,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefCheckerInner:refCallback destroy layout ref? false',
         'Text:Fallback create layout',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        spanHidden('refObject'),
-        spanHidden('refCallback'),
-        span('Fallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="refObject" hidden={true} />
+          <span prop="refCallback" hidden={true} />
+          <span prop="Fallback" />
+        </>,
+      );
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -2747,11 +2882,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback destroy passive',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([
-        span('Async'),
-        span('refObject'),
-        span('refCallback'),
-      ]);
+      expect(ReactNoop).toMatchRenderedOutput(
+        <>
+          <span prop="Async" />
+          <span prop="refObject" />
+          <span prop="refCallback" />
+        </>,
+      );
 
       await act(async () => {
         ReactNoop.render(null);
@@ -2764,11 +2901,10 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefCheckerInner:refCallback destroy layout ref? false',
         'AsyncText:Async destroy passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([]);
+      expect(ReactNoop).toMatchRenderedOutput(null);
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be cleared and reset for class components', async () => {
       class ClassComponent extends React.Component {
         render() {
@@ -2805,7 +2941,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefCheckerOuter refCallback value? true',
         'RefCheckerOuter create layout refObject? true refCallback? true',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([]);
+      expect(ReactNoop).toMatchRenderedOutput(null);
 
       // Suspend the inner Suspense subtree (only inner effects should be destroyed)
       act(() => {
@@ -2829,7 +2965,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefCheckerInner:refCallback destroy layout ref? false',
         'Text:Fallback create layout',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Fallback')]);
+      expect(ReactNoop).toMatchRenderedOutput(<span prop="Fallback" />);
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -2852,7 +2988,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback destroy passive',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Async')]);
+      expect(ReactNoop).toMatchRenderedOutput(<span prop="Async" />);
 
       await act(async () => {
         ReactNoop.render(null);
@@ -2865,11 +3001,10 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefCheckerInner:refCallback destroy layout ref? false',
         'AsyncText:Async destroy passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([]);
+      expect(ReactNoop).toMatchRenderedOutput(null);
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should be cleared and reset for function components with useImperativeHandle', async () => {
       const FunctionComponent = React.forwardRef((props, ref) => {
         Scheduler.unstable_yieldValue('FunctionComponent render');
@@ -2910,7 +3045,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefCheckerOuter refCallback value? true',
         'RefCheckerOuter create layout refObject? true refCallback? true',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([]);
+      expect(ReactNoop).toMatchRenderedOutput(null);
 
       // Suspend the inner Suspense subtree (only inner effects should be destroyed)
       act(() => {
@@ -2934,7 +3069,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefCheckerInner:refCallback destroy layout ref? false',
         'Text:Fallback create layout',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Fallback')]);
+      expect(ReactNoop).toMatchRenderedOutput(<span prop="Fallback" />);
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -2957,7 +3092,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback destroy passive',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Async')]);
+      expect(ReactNoop).toMatchRenderedOutput(<span prop="Async" />);
 
       await act(async () => {
         ReactNoop.render(null);
@@ -2970,11 +3105,10 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefCheckerInner:refCallback destroy layout ref? false',
         'AsyncText:Async destroy passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([]);
+      expect(ReactNoop).toMatchRenderedOutput(null);
     });
 
-    // @gate enableSuspenseLayoutEffectSemantics
-    // @gate enableCache
+    // @gate enableLegacyCache
     it('should not reset for user-managed values', async () => {
       function RefChecker({forwardedRef}) {
         Scheduler.unstable_yieldValue(`RefChecker render`);
@@ -2984,8 +3118,9 @@ describe('ReactSuspenseEffectsSemantics', () => {
           );
           return () => {
             Scheduler.unstable_yieldValue(
-              `RefChecker destroy layout ref? ${forwardedRef.current ===
-                'test'}`,
+              `RefChecker destroy layout ref? ${
+                forwardedRef.current === 'test'
+              }`,
             );
           };
         }, []);
@@ -3023,7 +3158,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefChecker create layout ref? true',
         'App create layout ref? true',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([]);
+      expect(ReactNoop).toMatchRenderedOutput(null);
 
       // Suspend the inner Suspense subtree (only inner effects should be destroyed)
       act(() => {
@@ -3040,7 +3175,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefChecker destroy layout ref? true',
         'Text:Fallback create layout',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Fallback')]);
+      expect(ReactNoop).toMatchRenderedOutput(<span prop="Fallback" />);
 
       // Resolving the suspended resource should re-create inner layout effects.
       await act(async () => {
@@ -3056,7 +3191,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'Text:Fallback destroy passive',
         'AsyncText:Async create passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([span('Async')]);
+      expect(ReactNoop).toMatchRenderedOutput(<span prop="Async" />);
 
       await act(async () => {
         ReactNoop.render(null);
@@ -3067,12 +3202,11 @@ describe('ReactSuspenseEffectsSemantics', () => {
         'RefChecker destroy layout ref? true',
         'AsyncText:Async destroy passive',
       ]);
-      expect(ReactNoop.getChildren()).toEqual([]);
+      expect(ReactNoop).toMatchRenderedOutput(null);
     });
 
     describe('that throw errors', () => {
-      // @gate enableSuspenseLayoutEffectSemantics
-      // @gate enableCache
+      // @gate enableLegacyCache
       // @gate replayFailedUnitOfWorkWithInvokeGuardedCallback
       it('are properly handled in ref callbacks', async () => {
         let useRefCallbackShouldThrow = false;
@@ -3130,11 +3264,13 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Inside create passive',
           'Text:Outside create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([
-          span('ThrowsInRefCallback'),
-          span('Inside'),
-          span('Outside'),
-        ]);
+        expect(ReactNoop).toMatchRenderedOutput(
+          <>
+            <span prop="ThrowsInRefCallback" />
+            <span prop="Inside" />
+            <span prop="Outside" />
+          </>,
+        );
 
         // Schedule an update that causes React to suspend.
         await act(async () => {
@@ -3159,12 +3295,14 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Fallback create layout',
           'Text:Fallback create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([
-          spanHidden('ThrowsInRefCallback'),
-          spanHidden('Inside'),
-          span('Fallback'),
-          span('Outside'),
-        ]);
+        expect(ReactNoop).toMatchRenderedOutput(
+          <>
+            <span prop="ThrowsInRefCallback" hidden={true} />
+            <span prop="Inside" hidden={true} />
+            <span prop="Fallback" />
+            <span prop="Outside" />
+          </>,
+        );
 
         // Resolve the pending suspense and throw
         useRefCallbackShouldThrow = true;
@@ -3203,7 +3341,7 @@ describe('ReactSuspenseEffectsSemantics', () => {
           'Text:Error create layout',
           'Text:Error create passive',
         ]);
-        expect(ReactNoop.getChildren()).toEqual([span('Error')]);
+        expect(ReactNoop).toMatchRenderedOutput(<span prop="Error" />);
       });
     });
   });

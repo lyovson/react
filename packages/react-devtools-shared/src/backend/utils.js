@@ -1,6 +1,6 @@
 /**
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,6 +9,7 @@
  */
 
 import {copy} from 'clipboard-js';
+import {compareVersions} from 'compare-versions';
 import {dehydrate} from '../hydration';
 import isArray from 'shared/isArray';
 
@@ -20,8 +21,8 @@ export function cleanForBridge(
   path?: Array<string | number> = [],
 ): DehydratedData | null {
   if (data !== null) {
-    const cleanedPaths = [];
-    const unserializablePaths = [];
+    const cleanedPaths: Array<Array<string | number>> = [];
+    const unserializablePaths: Array<Array<string | number>> = [];
     const cleanedData = dehydrate(
       data,
       cleanedPaths,
@@ -119,7 +120,10 @@ export function copyWithSet(
   return updated;
 }
 
-export function getEffectDurations(root: Object) {
+export function getEffectDurations(root: Object): {
+  effectDuration: any | null,
+  passiveEffectDuration: any | null,
+} {
   // Profiling durations are only available for certain builds.
   // If available, they'll be stored on the HostRoot.
   let effectDuration = null;
@@ -140,7 +144,7 @@ export function getEffectDurations(root: Object) {
 }
 
 export function serializeToString(data: any): string {
-  const cache = new Set();
+  const cache = new Set<mixed>();
   // Use a custom replacer function to protect against circular references.
   return JSON.stringify(data, (key, value) => {
     if (typeof value === 'object' && value !== null) {
@@ -149,7 +153,6 @@ export function serializeToString(data: any): string {
       }
       cache.add(value);
     }
-    // $FlowFixMe
     if (typeof value === 'bigint') {
       return value.toString() + 'n';
     }
@@ -181,9 +184,8 @@ export function formatWithStyles(
     inputArgs === undefined ||
     inputArgs === null ||
     inputArgs.length === 0 ||
-    typeof inputArgs[0] !== 'string' ||
     // Matches any of %c but not %%c
-    inputArgs[0].match(/([^%]|^)(%c)/g) ||
+    (typeof inputArgs[0] === 'string' && inputArgs[0].match(/([^%]|^)(%c)/g)) ||
     style === undefined
   ) {
     return inputArgs;
@@ -191,7 +193,7 @@ export function formatWithStyles(
 
   // Matches any of %(o|O|d|i|s|f), but not %%(o|O|d|i|s|f)
   const REGEXP = /([^%]|^)((%%)*)(%([oOdisf]))/g;
-  if (inputArgs[0].match(REGEXP)) {
+  if (typeof inputArgs[0] === 'string' && inputArgs[0].match(REGEXP)) {
     return [`%c${inputArgs[0]}`, style, ...inputArgs.slice(1)];
   } else {
     const firstArg = inputArgs.reduce((formatStr, elem, i) => {
@@ -273,4 +275,12 @@ export function isSynchronousXHRSupported(): boolean {
     window.document.featurePolicy &&
     window.document.featurePolicy.allowsFeature('sync-xhr')
   );
+}
+
+export function gt(a: string = '', b: string = ''): boolean {
+  return compareVersions(a, b) === 1;
+}
+
+export function gte(a: string = '', b: string = ''): boolean {
+  return compareVersions(a, b) > -1;
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -28,6 +28,10 @@ function sleep(period) {
 }
 
 describe('ReactTestUtils.act()', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   // first we run all the tests with concurrent mode
   if (__EXPERIMENTAL__) {
     let concurrentRoot = null;
@@ -488,13 +492,13 @@ function runActTests(label, render, unmount, rerender) {
 
       // @gate __DEV__
       it('warns if you do not await an act call', async () => {
-        spyOnDevAndProd(console, 'error');
+        spyOnDevAndProd(console, 'error').mockImplementation(() => {});
         act(async () => {});
         // it's annoying that we have to wait a tick before this warning comes in
         await sleep(0);
         if (__DEV__) {
-          expect(console.error.calls.count()).toEqual(1);
-          expect(console.error.calls.argsFor(0)[0]).toMatch(
+          expect(console.error).toHaveBeenCalledTimes(1);
+          expect(console.error.mock.calls[0][0]).toMatch(
             'You called act(async () => ...) without await.',
           );
         }
@@ -502,25 +506,24 @@ function runActTests(label, render, unmount, rerender) {
 
       // @gate __DEV__
       it('warns if you try to interleave multiple act calls', async () => {
-        spyOnDevAndProd(console, 'error');
-        // let's try to cheat and spin off a 'thread' with an act call
-        (async () => {
-          await act(async () => {
-            await sleep(50);
-          });
-        })();
+        spyOnDevAndProd(console, 'error').mockImplementation(() => {});
 
-        await act(async () => {
-          await sleep(100);
-        });
+        await Promise.all([
+          act(async () => {
+            await sleep(50);
+          }),
+          act(async () => {
+            await sleep(100);
+          }),
+        ]);
 
         await sleep(150);
         if (__DEV__) {
           expect(console.error).toHaveBeenCalledTimes(2);
-          expect(console.error.calls.argsFor(0)[0]).toMatch(
+          expect(console.error.mock.calls[0][0]).toMatch(
             'You seem to have overlapping act() calls',
           );
-          expect(console.error.calls.argsFor(1)[0]).toMatch(
+          expect(console.error.mock.calls[1][0]).toMatch(
             'You seem to have overlapping act() calls',
           );
         }

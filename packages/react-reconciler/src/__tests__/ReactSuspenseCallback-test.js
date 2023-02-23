@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,10 +21,6 @@ describe('ReactSuspense', () => {
     ReactNoop = require('react-noop-renderer');
     Scheduler = require('scheduler');
   });
-
-  function text(t) {
-    return {text: t, hidden: false};
-  }
 
   function createThenable() {
     let completed = false;
@@ -88,13 +84,13 @@ describe('ReactSuspense', () => {
 
     ReactNoop.render(element);
     expect(Scheduler).toFlushWithoutYielding();
-    expect(ReactNoop.getChildren()).toEqual([text('Waiting')]);
+    expect(ReactNoop).toMatchRenderedOutput('Waiting');
     expect(ops).toEqual([new Set([promise])]);
     ops = [];
 
     await resolve();
     expect(Scheduler).toFlushWithoutYielding();
-    expect(ReactNoop.getChildren()).toEqual([text('Done')]);
+    expect(ReactNoop).toMatchRenderedOutput('Done');
     expect(ops).toEqual([]);
   });
 
@@ -127,21 +123,21 @@ describe('ReactSuspense', () => {
 
     ReactNoop.render(element);
     expect(Scheduler).toFlushWithoutYielding();
-    expect(ReactNoop.getChildren()).toEqual([text('Waiting Tier 1')]);
+    expect(ReactNoop).toMatchRenderedOutput('Waiting Tier 1');
     expect(ops).toEqual([new Set([promise1, promise2])]);
     ops = [];
 
     await resolve1();
     ReactNoop.render(element);
     expect(Scheduler).toFlushWithoutYielding();
-    expect(ReactNoop.getChildren()).toEqual([text('Waiting Tier 1')]);
+    expect(ReactNoop).toMatchRenderedOutput('Waiting Tier 1');
     expect(ops).toEqual([new Set([promise2])]);
     ops = [];
 
     await resolve2();
     ReactNoop.render(element);
     expect(Scheduler).toFlushWithoutYielding();
-    expect(ReactNoop.getChildren()).toEqual([text('Done'), text('Done')]);
+    expect(ReactNoop).toMatchRenderedOutput('DoneDone');
     expect(ops).toEqual([]);
   });
 
@@ -172,7 +168,7 @@ describe('ReactSuspense', () => {
 
     ReactNoop.render(element);
     expect(Scheduler).toFlushWithoutYielding();
-    expect(ReactNoop.getChildren()).toEqual([text('Waiting Tier 2')]);
+    expect(ReactNoop).toMatchRenderedOutput('Waiting Tier 2');
     expect(ops1).toEqual([]);
     expect(ops2).toEqual([new Set([promise])]);
   });
@@ -214,7 +210,7 @@ describe('ReactSuspense', () => {
 
     ReactNoop.render(element);
     expect(Scheduler).toFlushWithoutYielding();
-    expect(ReactNoop.getChildren()).toEqual([text('Waiting Tier 1')]);
+    expect(ReactNoop).toMatchRenderedOutput('Waiting Tier 1');
     expect(ops1).toEqual([new Set([promise1])]);
     expect(ops2).toEqual([]);
     ops1 = [];
@@ -228,10 +224,7 @@ describe('ReactSuspense', () => {
     // TODO: Should be able to use `act` here.
     jest.runAllTimers();
 
-    expect(ReactNoop.getChildren()).toEqual([
-      text('Waiting Tier 2'),
-      text('Done'),
-    ]);
+    expect(ReactNoop).toMatchRenderedOutput('Waiting Tier 2Done');
     expect(ops1).toEqual([]);
     expect(ops2).toEqual([new Set([promise2])]);
     ops1 = [];
@@ -240,7 +233,7 @@ describe('ReactSuspense', () => {
     await resolve2();
     ReactNoop.render(element);
     expect(Scheduler).toFlushWithoutYielding();
-    expect(ReactNoop.getChildren()).toEqual([text('Done'), text('Done')]);
+    expect(ReactNoop).toMatchRenderedOutput('DoneDone');
     expect(ops1).toEqual([]);
     expect(ops2).toEqual([]);
   });

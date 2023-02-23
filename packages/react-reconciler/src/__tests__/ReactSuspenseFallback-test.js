@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -127,11 +127,7 @@ describe('ReactSuspenseFallback', () => {
     return <span prop={fullText} />;
   }
 
-  function span(prop) {
-    return {type: 'span', children: [], prop, hidden: false};
-  }
-
-  // @gate enableCache
+  // @gate enableLegacyCache
   it('suspends and shows fallback', () => {
     ReactNoop.render(
       <Suspense fallback={<Text text="Loading..." />}>
@@ -140,10 +136,10 @@ describe('ReactSuspenseFallback', () => {
     );
 
     expect(Scheduler).toFlushAndYield(['Suspend! [A]', 'Loading...']);
-    expect(ReactNoop.getChildren()).toEqual([span('Loading...')]);
+    expect(ReactNoop).toMatchRenderedOutput(<span prop="Loading..." />);
   });
 
-  // @gate enableCache
+  // @gate enableLegacyCache
   it('suspends and shows null fallback', () => {
     ReactNoop.render(
       <Suspense fallback={null}>
@@ -155,10 +151,10 @@ describe('ReactSuspenseFallback', () => {
       'Suspend! [A]',
       // null
     ]);
-    expect(ReactNoop.getChildren()).toEqual([]);
+    expect(ReactNoop).toMatchRenderedOutput(null);
   });
 
-  // @gate enableCache
+  // @gate enableLegacyCache
   it('suspends and shows undefined fallback', () => {
     ReactNoop.render(
       <Suspense>
@@ -170,10 +166,10 @@ describe('ReactSuspenseFallback', () => {
       'Suspend! [A]',
       // null
     ]);
-    expect(ReactNoop.getChildren()).toEqual([]);
+    expect(ReactNoop).toMatchRenderedOutput(null);
   });
 
-  // @gate enableCache
+  // @gate enableLegacyCache
   it('suspends and shows inner fallback', () => {
     ReactNoop.render(
       <Suspense fallback={<Text text="Should not show..." />}>
@@ -184,10 +180,10 @@ describe('ReactSuspenseFallback', () => {
     );
 
     expect(Scheduler).toFlushAndYield(['Suspend! [A]', 'Loading...']);
-    expect(ReactNoop.getChildren()).toEqual([span('Loading...')]);
+    expect(ReactNoop).toMatchRenderedOutput(<span prop="Loading..." />);
   });
 
-  // @gate enableCache
+  // @gate enableLegacyCache
   it('suspends and shows inner undefined fallback', () => {
     ReactNoop.render(
       <Suspense fallback={<Text text="Should not show..." />}>
@@ -201,10 +197,10 @@ describe('ReactSuspenseFallback', () => {
       'Suspend! [A]',
       // null
     ]);
-    expect(ReactNoop.getChildren()).toEqual([]);
+    expect(ReactNoop).toMatchRenderedOutput(null);
   });
 
-  // @gate enableCache
+  // @gate enableLegacyCache
   it('suspends and shows inner null fallback', () => {
     ReactNoop.render(
       <Suspense fallback={<Text text="Should not show..." />}>
@@ -218,6 +214,6 @@ describe('ReactSuspenseFallback', () => {
       'Suspend! [A]',
       // null
     ]);
-    expect(ReactNoop.getChildren()).toEqual([]);
+    expect(ReactNoop).toMatchRenderedOutput(null);
   });
 });

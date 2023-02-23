@@ -1,5 +1,5 @@
 /**
- * (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * @emails react-core
  * @jest-environment node
@@ -32,13 +32,14 @@ beforeEach(() => {
  */
 function mockRenderKeys(keyLists) {
   const ReactFabric = require('react-native-renderer/fabric');
-  const createReactNativeComponentClass = require('react-native/Libraries/ReactPrivate/ReactNativePrivateInterface')
-    .ReactNativeViewConfigRegistry.register;
+  const createReactNativeComponentClass =
+    require('react-native/Libraries/ReactPrivate/ReactNativePrivateInterface')
+      .ReactNativeViewConfigRegistry.register;
   const {act} = require('jest-react');
 
   const mockContainerTag = 11;
   const MockView = createReactNativeComponentClass('RCTMockView', () => ({
-    validAttributes: {},
+    validAttributes: {foo: true},
     uiViewClassName: 'RCTMockView',
   }));
 
@@ -199,22 +200,43 @@ describe('measureLayout', () => {
   });
 });
 
+describe('unstable_getBoundingClientRect', () => {
+  test('component.unstable_getBoundingClientRect() returns DOMRect', () => {
+    const [[fooRef]] = mockRenderKeys([['foo']]);
+
+    const rect = fooRef.unstable_getBoundingClientRect();
+
+    expect(nativeFabricUIManager.getBoundingClientRect).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(rect.toJSON()).toMatchObject({
+      x: 10,
+      y: 10,
+      width: 100,
+      height: 100,
+    });
+  });
+
+  test('unmounted.unstable_getBoundingClientRect() returns empty DOMRect', () => {
+    const [[fooRef]] = mockRenderKeys([['foo'], null]);
+
+    const rect = fooRef.unstable_getBoundingClientRect();
+
+    expect(nativeFabricUIManager.getBoundingClientRect).not.toHaveBeenCalled();
+    expect(rect.toJSON()).toMatchObject({x: 0, y: 0, width: 0, height: 0});
+  });
+});
+
 describe('setNativeProps', () => {
-  test('setNativeProps(...) emits a warning', () => {
+  test('setNativeProps(...) invokes setNativeProps on Fabric UIManager', () => {
     const {
       UIManager,
     } = require('react-native/Libraries/ReactPrivate/ReactNativePrivateInterface');
 
     const [[fooRef]] = mockRenderKeys([['foo']]);
+    fooRef.setNativeProps({foo: 'baz'});
 
-    expect(() => {
-      fooRef.setNativeProps({});
-    }).toErrorDev(
-      ['Warning: setNativeProps is not currently supported in Fabric'],
-      {
-        withoutStack: true,
-      },
-    );
     expect(UIManager.updateView).not.toBeCalled();
+    expect(nativeFabricUIManager.setNativeProps).toHaveBeenCalledTimes(1);
   });
 });

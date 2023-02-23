@@ -2,6 +2,8 @@
 
 /* eslint-disable no-for-of-loops/no-for-of-loops */
 
+const getComments = require('./getComments');
+
 const GATE_VERSION_STR = '@reactVersion ';
 
 function transform(babel) {
@@ -19,6 +21,10 @@ function transform(babel) {
   // See info about semver ranges here:
   // https://www.npmjs.com/package/semver
   function buildGateVersionCondition(comments) {
+    if (!comments) {
+      return null;
+    }
+
     let conditions = null;
     for (const line of comments) {
       const commentStr = line.value.trim();
@@ -61,16 +67,16 @@ function transform(babel) {
                 callee.name === 'it' ||
                 callee.name === 'fit'
               ) {
-                const comments = statement.leadingComments;
-                if (comments !== undefined) {
-                  const condition = buildGateVersionCondition(comments);
-                  if (condition !== null) {
-                    callee.name =
-                      callee.name === 'fit'
-                        ? '_test_react_version_focus'
-                        : '_test_react_version';
-                    expression.arguments = [condition, ...expression.arguments];
-                  }
+                const comments = getComments(path);
+                const condition = buildGateVersionCondition(comments);
+                if (condition !== null) {
+                  callee.name =
+                    callee.name === 'fit'
+                      ? '_test_react_version_focus'
+                      : '_test_react_version';
+                  expression.arguments = [condition, ...expression.arguments];
+                } else {
+                  callee.name = '_test_ignore_for_react_version';
                 }
               }
               break;
@@ -83,15 +89,18 @@ function transform(babel) {
                 callee.property.type === 'Identifier' &&
                 callee.property.name === 'only'
               ) {
-                const comments = statement.leadingComments;
-                if (comments !== undefined) {
-                  const condition = buildGateVersionCondition(comments);
-                  if (condition !== null) {
-                    statement.expression = t.callExpression(
-                      t.identifier('_test_react_version_focus'),
-                      [condition, ...expression.arguments]
-                    );
-                  }
+                const comments = getComments(path);
+                const condition = buildGateVersionCondition(comments);
+                if (condition !== null) {
+                  statement.expression = t.callExpression(
+                    t.identifier('_test_react_version_focus'),
+                    [condition, ...expression.arguments]
+                  );
+                } else {
+                  statement.expression = t.callExpression(
+                    t.identifier('_test_ignore_for_react_version'),
+                    expression.arguments
+                  );
                 }
               }
               break;

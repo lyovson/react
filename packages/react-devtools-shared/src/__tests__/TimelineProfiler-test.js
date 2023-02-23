@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,6 +8,8 @@
  */
 
 'use strict';
+
+import {normalizeCodeLocInfo} from './utils';
 
 describe('Timeline profiler', () => {
   let React;
@@ -43,6 +45,10 @@ describe('Timeline profiler', () => {
     Scheduler = require('scheduler');
 
     store = global.store;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('User Timing API', () => {
@@ -110,8 +116,8 @@ describe('Timeline profiler', () => {
     }
 
     beforeEach(() => {
-      setPerformanceMock = require('react-devtools-shared/src/backend/profilingHooks')
-        .setPerformanceMock_ONLY_FOR_TESTING;
+      setPerformanceMock =
+        require('react-devtools-shared/src/backend/profilingHooks').setPerformanceMock_ONLY_FOR_TESTING;
       setPerformanceMock(createUserTimingPolyfill());
     });
 
@@ -128,17 +134,17 @@ describe('Timeline profiler', () => {
       renderHelper(<div />);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--schedule-render-1",
-          "--render-start-1",
+        [
+          "--schedule-render-2",
+          "--render-start-2",
           "--render-stop",
-          "--commit-start-1",
+          "--commit-start-2",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-1",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-2",
           "--layout-effects-stop",
           "--commit-stop",
         ]
@@ -149,26 +155,26 @@ describe('Timeline profiler', () => {
       renderRootHelper(<div />);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-            Array [
-              "--schedule-render-16",
-            ]
-        `);
+        [
+          "--schedule-render-32",
+        ]
+      `);
 
       clearPendingMarks();
 
       expect(Scheduler).toFlushUntilNextPaint([]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--render-start-16",
+        [
+          "--render-start-32",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
           "--layout-effects-stop",
           "--commit-stop",
         ]
@@ -194,14 +200,14 @@ describe('Timeline profiler', () => {
       expect(Scheduler).toFlushAndYieldThrough(['Foo']);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-            Array [
-              "--schedule-render-64",
-              "--render-start-64",
-              "--component-render-start-Foo",
-              "--component-render-stop",
-              "--render-yield",
-            ]
-        `);
+        [
+          "--schedule-render-128",
+          "--render-start-128",
+          "--component-render-start-Foo",
+          "--component-render-stop",
+          "--render-yield",
+        ]
+      `);
     });
 
     it('should mark sync render with suspense that resolves', async () => {
@@ -217,20 +223,20 @@ describe('Timeline profiler', () => {
       );
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--schedule-render-1",
-          "--render-start-1",
+        [
+          "--schedule-render-2",
+          "--render-start-2",
           "--component-render-start-Example",
           "--component-render-stop",
-          "--suspense-suspend-0-Example-mount-1-",
+          "--suspense-suspend-0-Example-mount-2-",
           "--render-stop",
-          "--commit-start-1",
+          "--commit-start-2",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-1",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-2",
           "--layout-effects-stop",
           "--commit-stop",
         ]
@@ -240,7 +246,7 @@ describe('Timeline profiler', () => {
 
       await fakeSuspensePromise;
       expect(clearedMarks).toMatchInlineSnapshot(`
-                Array [
+                [
                   "--suspense-resolved-0-Example",
                 ]
           `);
@@ -259,20 +265,20 @@ describe('Timeline profiler', () => {
       );
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--schedule-render-1",
-          "--render-start-1",
+        [
+          "--schedule-render-2",
+          "--render-start-2",
           "--component-render-start-Example",
           "--component-render-stop",
-          "--suspense-suspend-0-Example-mount-1-",
+          "--suspense-suspend-0-Example-mount-2-",
           "--render-stop",
-          "--commit-start-1",
+          "--commit-start-2",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-1",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-2",
           "--layout-effects-stop",
           "--commit-stop",
         ]
@@ -297,29 +303,29 @@ describe('Timeline profiler', () => {
       );
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-            Array [
-              "--schedule-render-16",
-            ]
-        `);
+        [
+          "--schedule-render-32",
+        ]
+      `);
 
       clearPendingMarks();
 
       expect(Scheduler).toFlushUntilNextPaint([]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--render-start-16",
+        [
+          "--render-start-32",
           "--component-render-start-Example",
           "--component-render-stop",
-          "--suspense-suspend-0-Example-mount-16-",
+          "--suspense-suspend-0-Example-mount-32-",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
           "--layout-effects-stop",
           "--commit-stop",
         ]
@@ -329,7 +335,7 @@ describe('Timeline profiler', () => {
 
       await fakeSuspensePromise;
       expect(clearedMarks).toMatchInlineSnapshot(`
-            Array [
+            [
               "--suspense-resolved-0-Example",
             ]
         `);
@@ -348,29 +354,29 @@ describe('Timeline profiler', () => {
       );
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-            Array [
-              "--schedule-render-16",
-            ]
-        `);
+        [
+          "--schedule-render-32",
+        ]
+      `);
 
       clearPendingMarks();
 
       expect(Scheduler).toFlushUntilNextPaint([]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--render-start-16",
+        [
+          "--render-start-32",
           "--component-render-start-Example",
           "--component-render-stop",
-          "--suspense-suspend-0-Example-mount-16-",
+          "--suspense-suspend-0-Example-mount-32-",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
           "--layout-effects-stop",
           "--commit-stop",
         ]
@@ -380,7 +386,7 @@ describe('Timeline profiler', () => {
 
       await expect(fakeSuspensePromise).rejects.toThrow();
       expect(clearedMarks).toMatchInlineSnapshot(`
-                Array [
+                [
                   "--suspense-rejected-0-Example",
                 ]
           `);
@@ -400,40 +406,40 @@ describe('Timeline profiler', () => {
       renderRootHelper(<Example />);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-            Array [
-              "--schedule-render-16",
-            ]
-        `);
+        [
+          "--schedule-render-32",
+        ]
+      `);
 
       clearPendingMarks();
 
       expect(Scheduler).toFlushUntilNextPaint([]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--render-start-16",
+        [
+          "--render-start-32",
           "--component-render-start-Example",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
-          "--schedule-state-update-1-Example",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
+          "--schedule-state-update-2-Example",
           "--layout-effects-stop",
-          "--render-start-1",
+          "--render-start-2",
           "--component-render-start-Example",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-1",
+          "--commit-start-2",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
           "--commit-stop",
           "--commit-stop",
         ]
@@ -453,40 +459,40 @@ describe('Timeline profiler', () => {
       renderRootHelper(<Example />);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-                Array [
-                  "--schedule-render-16",
-                ]
-          `);
+        [
+          "--schedule-render-32",
+        ]
+      `);
 
       clearPendingMarks();
 
       expect(Scheduler).toFlushUntilNextPaint([]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--render-start-16",
+        [
+          "--render-start-32",
           "--component-render-start-Example",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
-          "--schedule-forced-update-1-Example",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
+          "--schedule-forced-update-2-Example",
           "--layout-effects-stop",
-          "--render-start-1",
+          "--render-start-2",
           "--component-render-start-Example",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-1",
+          "--commit-start-2",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
           "--commit-stop",
           "--commit-stop",
         ]
@@ -507,15 +513,15 @@ describe('Timeline profiler', () => {
       renderRootHelper(<Example />);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-                Array [
-                  "--schedule-render-16",
-                ]
-          `);
+        [
+          "--schedule-render-32",
+        ]
+      `);
 
       clearPendingMarks();
 
       let errorMessage;
-      spyOn(console, 'error').and.callFake(message => {
+      jest.spyOn(console, 'error').mockImplementation(message => {
         errorMessage = message;
       });
 
@@ -527,19 +533,19 @@ describe('Timeline profiler', () => {
       );
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--render-start-16",
+        [
+          "--render-start-32",
           "--component-render-start-Example",
-          "--schedule-state-update-16-Example",
+          "--schedule-state-update-32-Example",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
           "--layout-effects-stop",
           "--commit-stop",
         ]
@@ -561,15 +567,15 @@ describe('Timeline profiler', () => {
       renderRootHelper(<Example />);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-                Array [
-                  "--schedule-render-16",
-                ]
-          `);
+        [
+          "--schedule-render-32",
+        ]
+      `);
 
       clearPendingMarks();
 
       let errorMessage;
-      spyOn(console, 'error').and.callFake(message => {
+      jest.spyOn(console, 'error').mockImplementation(message => {
         errorMessage = message;
       });
 
@@ -581,19 +587,19 @@ describe('Timeline profiler', () => {
       );
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--render-start-16",
+        [
+          "--render-start-32",
           "--component-render-start-Example",
-          "--schedule-forced-update-16-Example",
+          "--schedule-forced-update-32-Example",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
           "--layout-effects-stop",
           "--commit-stop",
         ]
@@ -612,42 +618,42 @@ describe('Timeline profiler', () => {
       renderRootHelper(<Example />);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-                Array [
-                  "--schedule-render-16",
-                ]
-          `);
+        [
+          "--schedule-render-32",
+        ]
+      `);
 
       clearPendingMarks();
 
       expect(Scheduler).toFlushUntilNextPaint([]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--render-start-16",
+        [
+          "--render-start-32",
           "--component-render-start-Example",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
           "--component-layout-effect-mount-start-Example",
-          "--schedule-state-update-1-Example",
+          "--schedule-state-update-2-Example",
           "--component-layout-effect-mount-stop",
           "--layout-effects-stop",
-          "--render-start-1",
+          "--render-start-2",
           "--component-render-start-Example",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-1",
+          "--commit-start-2",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
           "--commit-stop",
           "--commit-stop",
         ]
@@ -668,36 +674,36 @@ describe('Timeline profiler', () => {
       expect(Scheduler).toFlushAndYield([]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--schedule-render-16",
-          "--render-start-16",
+        [
+          "--schedule-render-32",
+          "--render-start-32",
           "--component-render-start-Example",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
           "--layout-effects-stop",
           "--commit-stop",
-          "--passive-effects-start-16",
+          "--passive-effects-start-32",
           "--component-passive-effect-mount-start-Example",
-          "--schedule-state-update-16-Example",
+          "--schedule-state-update-32-Example",
           "--component-passive-effect-mount-stop",
           "--passive-effects-stop",
-          "--render-start-16",
+          "--render-start-32",
           "--component-render-start-Example",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
           "--commit-stop",
         ]
       `);
@@ -717,20 +723,20 @@ describe('Timeline profiler', () => {
       expect(Scheduler).toFlushAndYield([]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--schedule-render-16",
-          "--render-start-16",
+        [
+          "--schedule-render-32",
+          "--render-start-32",
           "--component-render-start-Example",
-          "--schedule-state-update-16-Example",
+          "--schedule-state-update-32-Example",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
           "--layout-effects-stop",
           "--commit-stop",
         ]
@@ -738,7 +744,7 @@ describe('Timeline profiler', () => {
     });
 
     it('should mark sync render that throws', async () => {
-      spyOn(console, 'error');
+      jest.spyOn(console, 'error').mockImplementation(() => {});
 
       class ErrorBoundary extends React.Component {
         state = {error: null};
@@ -764,9 +770,9 @@ describe('Timeline profiler', () => {
       );
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--schedule-render-1",
-          "--render-start-1",
+        [
+          "--schedule-render-2",
+          "--render-start-2",
           "--component-render-start-ErrorBoundary",
           "--component-render-stop",
           "--component-render-start-ExampleThatThrows",
@@ -774,33 +780,33 @@ describe('Timeline profiler', () => {
           "--component-render-stop",
           "--error-ExampleThatThrows-mount-Expected error",
           "--render-stop",
-          "--commit-start-1",
+          "--commit-start-2",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-1",
-          "--schedule-state-update-1-ErrorBoundary",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-2",
+          "--schedule-state-update-2-ErrorBoundary",
           "--layout-effects-stop",
           "--commit-stop",
-          "--render-start-1",
+          "--render-start-2",
           "--component-render-start-ErrorBoundary",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-1",
+          "--commit-start-2",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
           "--commit-stop",
         ]
       `);
     });
 
     it('should mark concurrent render that throws', async () => {
-      spyOn(console, 'error');
+      jest.spyOn(console, 'error').mockImplementation(() => {});
 
       class ErrorBoundary extends React.Component {
         state = {error: null};
@@ -827,18 +833,18 @@ describe('Timeline profiler', () => {
       );
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-                Array [
-                  "--schedule-render-16",
-                ]
-          `);
+        [
+          "--schedule-render-32",
+        ]
+      `);
 
       clearPendingMarks();
 
       expect(Scheduler).toFlushUntilNextPaint([]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--render-start-16",
+        [
+          "--render-start-32",
           "--component-render-start-ErrorBoundary",
           "--component-render-stop",
           "--component-render-start-ExampleThatThrows",
@@ -846,7 +852,7 @@ describe('Timeline profiler', () => {
           "--component-render-stop",
           "--error-ExampleThatThrows-mount-Expected error",
           "--render-stop",
-          "--render-start-16",
+          "--render-start-32",
           "--component-render-start-ErrorBoundary",
           "--component-render-stop",
           "--component-render-start-ExampleThatThrows",
@@ -854,25 +860,25 @@ describe('Timeline profiler', () => {
           "--component-render-stop",
           "--error-ExampleThatThrows-mount-Expected error",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
-          "--schedule-state-update-1-ErrorBoundary",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
+          "--schedule-state-update-2-ErrorBoundary",
           "--layout-effects-stop",
-          "--render-start-1",
+          "--render-start-2",
           "--component-render-start-ErrorBoundary",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-1",
+          "--commit-start-2",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
           "--commit-stop",
           "--commit-stop",
         ]
@@ -927,19 +933,19 @@ describe('Timeline profiler', () => {
       ]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--schedule-render-16",
-          "--render-start-16",
+        [
+          "--schedule-render-32",
+          "--render-start-32",
           "--component-render-start-ComponentWithEffects",
           "--component-render-stop",
           "--render-stop",
-          "--commit-start-16",
+          "--commit-start-32",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-          "--layout-effects-start-16",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--layout-effects-start-32",
           "--component-layout-effect-mount-start-ComponentWithEffects",
           "--component-layout-effect-mount-stop",
           "--component-layout-effect-mount-start-ComponentWithEffects",
@@ -958,17 +964,17 @@ describe('Timeline profiler', () => {
       ]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-            Array [
-              "--passive-effects-start-16",
-              "--component-passive-effect-mount-start-ComponentWithEffects",
-              "--component-passive-effect-mount-stop",
-              "--component-passive-effect-mount-start-ComponentWithEffects",
-              "--component-passive-effect-mount-stop",
-              "--component-passive-effect-mount-start-ComponentWithEffects",
-              "--component-passive-effect-mount-stop",
-              "--passive-effects-stop",
-            ]
-        `);
+        [
+          "--passive-effects-start-32",
+          "--component-passive-effect-mount-start-ComponentWithEffects",
+          "--component-passive-effect-mount-stop",
+          "--component-passive-effect-mount-start-ComponentWithEffects",
+          "--component-passive-effect-mount-stop",
+          "--component-passive-effect-mount-start-ComponentWithEffects",
+          "--component-passive-effect-mount-stop",
+          "--passive-effects-stop",
+        ]
+      `);
 
       clearPendingMarks();
 
@@ -985,23 +991,23 @@ describe('Timeline profiler', () => {
       ]);
 
       expect(clearedMarks).toMatchInlineSnapshot(`
-        Array [
-          "--schedule-render-1",
-          "--render-start-1",
+        [
+          "--schedule-render-2",
+          "--render-start-2",
           "--render-stop",
-          "--commit-start-1",
+          "--commit-start-2",
           "--react-version-<filtered-version>",
           "--profiler-version-1",
           "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
           "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-          "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+          "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
           "--component-layout-effect-unmount-start-ComponentWithEffects",
           "--component-layout-effect-unmount-stop",
           "--component-layout-effect-unmount-start-ComponentWithEffects",
           "--component-layout-effect-unmount-stop",
-          "--layout-effects-start-1",
+          "--layout-effects-start-2",
           "--layout-effects-stop",
-          "--passive-effects-start-1",
+          "--passive-effects-start-2",
           "--component-passive-effect-unmount-start-ComponentWithEffects",
           "--component-passive-effect-unmount-stop",
           "--component-passive-effect-unmount-start-ComponentWithEffects",
@@ -1019,17 +1025,17 @@ describe('Timeline profiler', () => {
         renderHelper(<div />);
 
         expect(clearedMarks).toMatchInlineSnapshot(`
-          Array [
-            "--schedule-render-1",
-            "--render-start-1",
+          [
+            "--schedule-render-2",
+            "--render-start-2",
             "--render-stop",
-            "--commit-start-1",
+            "--commit-start-2",
             "--react-version-<filtered-version>",
             "--profiler-version-1",
             "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
             "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-            "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-            "--layout-effects-start-1",
+            "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+            "--layout-effects-start-2",
             "--layout-effects-stop",
             "--commit-stop",
           ]
@@ -1039,10 +1045,10 @@ describe('Timeline profiler', () => {
       it('regression test DefaultLane', () => {
         renderRootHelper(<div />);
         expect(clearedMarks).toMatchInlineSnapshot(`
-                    Array [
-                      "--schedule-render-16",
-                    ]
-              `);
+          [
+            "--schedule-render-32",
+          ]
+        `);
       });
 
       it('regression test InputDiscreteLane', async () => {
@@ -1067,19 +1073,19 @@ describe('Timeline profiler', () => {
         await Promise.resolve();
 
         expect(clearedMarks).toMatchInlineSnapshot(`
-          Array [
-            "--schedule-state-update-1-App",
-            "--render-start-1",
+          [
+            "--schedule-state-update-2-App",
+            "--render-start-2",
             "--component-render-start-App",
             "--component-render-stop",
             "--render-stop",
-            "--commit-start-1",
+            "--commit-start-2",
             "--react-version-<filtered-version>",
             "--profiler-version-1",
             "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
             "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-            "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-            "--layout-effects-start-1",
+            "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+            "--layout-effects-start-2",
             "--layout-effects-stop",
             "--commit-stop",
           ]
@@ -1107,19 +1113,19 @@ describe('Timeline profiler', () => {
         expect(Scheduler).toFlushAndYield([]);
 
         expect(clearedMarks).toMatchInlineSnapshot(`
-          Array [
-            "--schedule-state-update-4-App",
-            "--render-start-4",
+          [
+            "--schedule-state-update-8-App",
+            "--render-start-8",
             "--component-render-start-App",
             "--component-render-stop",
             "--render-stop",
-            "--commit-start-4",
+            "--commit-start-8",
             "--react-version-<filtered-version>",
             "--profiler-version-1",
             "--react-internal-module-start-  at filtered (<anonymous>:0:0)",
             "--react-internal-module-stop-  at filtered (<anonymous>:1:1)",
-            "--react-lane-labels-Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
-            "--layout-effects-start-4",
+            "--react-lane-labels-SyncHydrationLane,Sync,InputContinuousHydration,InputContinuous,DefaultHydration,Default,TransitionHydration,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Transition,Retry,Retry,Retry,Retry,SelectiveHydration,IdleHydration,Idle,Offscreen",
+            "--layout-effects-start-8",
             "--layout-effects-stop",
             "--commit-stop",
           ]
@@ -1154,6 +1160,18 @@ describe('Timeline profiler', () => {
         if (timelineData) {
           expect(timelineData).toHaveLength(1);
 
+          // normalize the location for component stack source
+          // for snapshot testing
+          timelineData.forEach(data => {
+            data.schedulingEvents.forEach(event => {
+              if (event.componentStack) {
+                event.componentStack = normalizeCodeLocInfo(
+                  event.componentStack,
+                );
+              }
+            });
+          });
+
           return timelineData[0];
         } else {
           return null;
@@ -1175,9 +1193,9 @@ describe('Timeline profiler', () => {
 
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
-              "lanes": "0b0000000000000000000000000000001",
+          [
+            {
+              "lanes": "0b0000000000000000000000000000010",
               "timestamp": 10,
               "type": "schedule-render",
               "warning": null,
@@ -1191,9 +1209,9 @@ describe('Timeline profiler', () => {
 
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
-              "lanes": "0b0000000000000000000000000010000",
+          [
+            {
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 10,
               "type": "schedule-render",
               "warning": null,
@@ -1229,31 +1247,39 @@ describe('Timeline profiler', () => {
 
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "Example",
-              "lanes": "0b0000000000000000000000000000100",
+              "componentStack": "
+              in Example (at **)",
+              "lanes": "0b0000000000000000000000000001000",
               "timestamp": 10,
               "type": "schedule-state-update",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
-              "lanes": "0b0000000000000000000000001000000",
+              "componentStack": "
+              in Example (at **)",
+              "lanes": "0b0000000000000000000000010000000",
               "timestamp": 10,
               "type": "schedule-state-update",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
-              "lanes": "0b0000000000000000000000001000000",
+              "componentStack": "
+              in Example (at **)",
+              "lanes": "0b0000000000000000000000010000000",
               "timestamp": 10,
               "type": "schedule-state-update",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
-              "lanes": "0b0000000000000000000000000010000",
+              "componentStack": "
+              in Example (at **)",
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 10,
               "type": "schedule-state-update",
               "warning": null,
@@ -1261,15 +1287,15 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.componentMeasures).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "Example",
               "duration": 0,
               "timestamp": 10,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 10,
@@ -1281,6 +1307,7 @@ describe('Timeline profiler', () => {
         expect(timelineData.batchUIDToMeasuresMap.size).toBe(2);
       });
 
+      // @reactVersion >=18.0
       it('should mark render yields', async () => {
         function Bar() {
           Scheduler.unstable_yieldValue('Bar');
@@ -1346,7 +1373,7 @@ describe('Timeline profiler', () => {
         expect(timelineData.suspenseEvents).toHaveLength(1);
         const suspenseEvent = timelineData.suspenseEvents[0];
         expect(suspenseEvent).toMatchInlineSnapshot(`
-          Object {
+          {
             "componentName": "Example",
             "depth": 0,
             "duration": 10,
@@ -1365,6 +1392,7 @@ describe('Timeline profiler', () => {
         expect(timelineData.componentMeasures).toHaveLength(2);
       });
 
+      // @reactVersion >=18.0
       it('should mark sync render with suspense that rejects', async () => {
         let rejectFn;
         let rejected = false;
@@ -1403,7 +1431,7 @@ describe('Timeline profiler', () => {
         expect(timelineData.suspenseEvents).toHaveLength(1);
         const suspenseEvent = timelineData.suspenseEvents[0];
         expect(suspenseEvent).toMatchInlineSnapshot(`
-          Object {
+          {
             "componentName": "Example",
             "depth": 0,
             "duration": 10,
@@ -1422,6 +1450,7 @@ describe('Timeline profiler', () => {
         expect(timelineData.componentMeasures).toHaveLength(2);
       });
 
+      // @reactVersion >=18.0
       it('should mark concurrent render with suspense that resolves', async () => {
         let resolveFn;
         let resolved = false;
@@ -1460,7 +1489,7 @@ describe('Timeline profiler', () => {
         expect(timelineData.suspenseEvents).toHaveLength(1);
         const suspenseEvent = timelineData.suspenseEvents[0];
         expect(suspenseEvent).toMatchInlineSnapshot(`
-          Object {
+          {
             "componentName": "Example",
             "depth": 0,
             "duration": 10,
@@ -1479,6 +1508,7 @@ describe('Timeline profiler', () => {
         expect(timelineData.componentMeasures).toHaveLength(2);
       });
 
+      // @reactVersion >=18.0
       it('should mark concurrent render with suspense that rejects', async () => {
         let rejectFn;
         let rejected = false;
@@ -1517,7 +1547,7 @@ describe('Timeline profiler', () => {
         expect(timelineData.suspenseEvents).toHaveLength(1);
         const suspenseEvent = timelineData.suspenseEvents[0];
         expect(suspenseEvent).toMatchInlineSnapshot(`
-          Object {
+          {
             "componentName": "Example",
             "depth": 0,
             "duration": 10,
@@ -1558,15 +1588,15 @@ describe('Timeline profiler', () => {
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.batchUIDToMeasuresMap.size).toBe(2);
         expect(timelineData.componentMeasures).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 10,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 20,
@@ -1576,16 +1606,18 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
-              "lanes": "0b0000000000000000000000000010000",
+          [
+            {
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 10,
               "type": "schedule-render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
-              "lanes": "0b0000000000000000000000000000001",
+              "componentStack": "
+              in Example (at **)",
+              "lanes": "0b0000000000000000000000000000010",
               "timestamp": 20,
               "type": "schedule-state-update",
               "warning": null,
@@ -1615,15 +1647,15 @@ describe('Timeline profiler', () => {
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.batchUIDToMeasuresMap.size).toBe(2);
         expect(timelineData.componentMeasures).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 10,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 20,
@@ -1633,16 +1665,16 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
-              "lanes": "0b0000000000000000000000000010000",
+          [
+            {
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 10,
               "type": "schedule-render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
-              "lanes": "0b0000000000000000000000000000001",
+              "lanes": "0b0000000000000000000000000000010",
               "timestamp": 20,
               "type": "schedule-force-update",
               "warning": null,
@@ -1669,7 +1701,7 @@ describe('Timeline profiler', () => {
         renderRootHelper(<Example />);
 
         let errorMessage;
-        spyOn(console, 'error').and.callFake(message => {
+        jest.spyOn(console, 'error').mockImplementation(message => {
           errorMessage = message;
         });
 
@@ -1683,15 +1715,15 @@ describe('Timeline profiler', () => {
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.batchUIDToMeasuresMap.size).toBe(2);
         expect(timelineData.componentMeasures).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 10,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 20,
@@ -1701,16 +1733,18 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
-              "lanes": "0b0000000000000000000000000010000",
+          [
+            {
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 10,
               "type": "schedule-render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
-              "lanes": "0b0000000000000000000000000010000",
+              "componentStack": "
+              in Example (at **)",
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 10,
               "type": "schedule-state-update",
               "warning": null,
@@ -1736,7 +1770,7 @@ describe('Timeline profiler', () => {
         renderRootHelper(<Example />);
 
         let errorMessage;
-        spyOn(console, 'error').and.callFake(message => {
+        jest.spyOn(console, 'error').mockImplementation(message => {
           errorMessage = message;
         });
 
@@ -1750,15 +1784,15 @@ describe('Timeline profiler', () => {
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.batchUIDToMeasuresMap.size).toBe(2);
         expect(timelineData.componentMeasures).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 10,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 20,
@@ -1768,16 +1802,16 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
-              "lanes": "0b0000000000000000000000000010000",
+          [
+            {
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 10,
               "type": "schedule-render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
-              "lanes": "0b0000000000000000000000000010000",
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 20,
               "type": "schedule-force-update",
               "warning": null,
@@ -1805,22 +1839,22 @@ describe('Timeline profiler', () => {
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.batchUIDToMeasuresMap.size).toBe(2);
         expect(timelineData.componentMeasures).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 10,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
               "duration": 1,
               "timestamp": 20,
               "type": "layout-effect-mount",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 21,
@@ -1830,16 +1864,18 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
-              "lanes": "0b0000000000000000000000000010000",
+          [
+            {
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 10,
               "type": "schedule-render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
-              "lanes": "0b0000000000000000000000000000001",
+              "componentStack": "
+              in Example (at **)",
+              "lanes": "0b0000000000000000000000000000010",
               "timestamp": 21,
               "type": "schedule-state-update",
               "warning": null,
@@ -1866,22 +1902,22 @@ describe('Timeline profiler', () => {
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.batchUIDToMeasuresMap.size).toBe(2);
         expect(timelineData.componentMeasures).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 10,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
               "duration": 1,
               "timestamp": 20,
               "type": "passive-effect-mount",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
               "duration": 10,
               "timestamp": 21,
@@ -1891,16 +1927,18 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
-              "lanes": "0b0000000000000000000000000010000",
+          [
+            {
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 10,
               "type": "schedule-render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
-              "lanes": "0b0000000000000000000000000010000",
+              "componentStack": "
+              in Example (at **)",
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 21,
               "type": "schedule-state-update",
               "warning": null,
@@ -1927,8 +1965,8 @@ describe('Timeline profiler', () => {
         // Render phase updates should be retried as part of the same batch.
         expect(timelineData.batchUIDToMeasuresMap.size).toBe(1);
         expect(timelineData.componentMeasures).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "Example",
               "duration": 20,
               "timestamp": 10,
@@ -1938,16 +1976,18 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
-              "lanes": "0b0000000000000000000000000010000",
+          [
+            {
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 10,
               "type": "schedule-render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "Example",
-              "lanes": "0b0000000000000000000000000010000",
+              "componentStack": "
+              in Example (at **)",
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 20,
               "type": "schedule-state-update",
               "warning": null,
@@ -1957,7 +1997,7 @@ describe('Timeline profiler', () => {
       });
 
       it('should mark sync render that throws', async () => {
-        spyOn(console, 'error');
+        jest.spyOn(console, 'error').mockImplementation(() => {});
 
         class ErrorBoundary extends React.Component {
           state = {error: null};
@@ -1995,22 +2035,22 @@ describe('Timeline profiler', () => {
 
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.componentMeasures).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "ErrorBoundary",
               "duration": 10,
               "timestamp": 10,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ExampleThatThrows",
               "duration": 0,
               "timestamp": 20,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ErrorBoundary",
               "duration": 10,
               "timestamp": 20,
@@ -2020,16 +2060,18 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
-              "lanes": "0b0000000000000000000000000000001",
+          [
+            {
+              "lanes": "0b0000000000000000000000000000010",
               "timestamp": 10,
               "type": "schedule-render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ErrorBoundary",
-              "lanes": "0b0000000000000000000000000000001",
+              "componentStack": "
+              in ErrorBoundary (at **)",
+              "lanes": "0b0000000000000000000000000000010",
               "timestamp": 20,
               "type": "schedule-state-update",
               "warning": null,
@@ -2037,8 +2079,8 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.thrownErrors).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "ExampleThatThrows",
               "message": "Expected error",
               "phase": "mount",
@@ -2050,7 +2092,7 @@ describe('Timeline profiler', () => {
       });
 
       it('should mark concurrent render that throws', async () => {
-        spyOn(console, 'error');
+        jest.spyOn(console, 'error').mockImplementation(() => {});
 
         class ErrorBoundary extends React.Component {
           state = {error: null};
@@ -2092,36 +2134,36 @@ describe('Timeline profiler', () => {
 
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.componentMeasures).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "ErrorBoundary",
               "duration": 10,
               "timestamp": 10,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ExampleThatThrows",
               "duration": 0,
               "timestamp": 20,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ErrorBoundary",
               "duration": 10,
               "timestamp": 20,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ExampleThatThrows",
               "duration": 0,
               "timestamp": 30,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ErrorBoundary",
               "duration": 10,
               "timestamp": 30,
@@ -2131,16 +2173,18 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
-          Array [
-            Object {
-              "lanes": "0b0000000000000000000000000010000",
+          [
+            {
+              "lanes": "0b0000000000000000000000000100000",
               "timestamp": 10,
               "type": "schedule-render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ErrorBoundary",
-              "lanes": "0b0000000000000000000000000000001",
+              "componentStack": "
+              in ErrorBoundary (at **)",
+              "lanes": "0b0000000000000000000000000000010",
               "timestamp": 30,
               "type": "schedule-state-update",
               "warning": null,
@@ -2148,15 +2192,15 @@ describe('Timeline profiler', () => {
           ]
         `);
         expect(timelineData.thrownErrors).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "ExampleThatThrows",
               "message": "Expected error",
               "phase": "mount",
               "timestamp": 20,
               "type": "thrown-error",
             },
-            Object {
+            {
               "componentName": "ExampleThatThrows",
               "message": "Expected error",
               "phase": "mount",
@@ -2234,78 +2278,78 @@ describe('Timeline profiler', () => {
 
         const timelineData = stopProfilingAndGetTimelineData();
         expect(timelineData.componentMeasures).toMatchInlineSnapshot(`
-          Array [
-            Object {
+          [
+            {
               "componentName": "ComponentWithEffects",
               "duration": 0,
               "timestamp": 10,
               "type": "render",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ComponentWithEffects",
               "duration": 0,
               "timestamp": 10,
               "type": "layout-effect-mount",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ComponentWithEffects",
               "duration": 0,
               "timestamp": 10,
               "type": "layout-effect-mount",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ComponentWithEffects",
               "duration": 0,
               "timestamp": 10,
               "type": "passive-effect-mount",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ComponentWithEffects",
               "duration": 0,
               "timestamp": 10,
               "type": "passive-effect-mount",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ComponentWithEffects",
               "duration": 0,
               "timestamp": 10,
               "type": "passive-effect-mount",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ComponentWithEffects",
               "duration": 0,
               "timestamp": 10,
               "type": "layout-effect-unmount",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ComponentWithEffects",
               "duration": 0,
               "timestamp": 10,
               "type": "layout-effect-unmount",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ComponentWithEffects",
               "duration": 0,
               "timestamp": 10,
               "type": "passive-effect-unmount",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ComponentWithEffects",
               "duration": 0,
               "timestamp": 10,
               "type": "passive-effect-unmount",
               "warning": null,
             },
-            Object {
+            {
               "componentName": "ComponentWithEffects",
               "duration": 0,
               "timestamp": 10,
@@ -2316,86 +2360,86 @@ describe('Timeline profiler', () => {
         `);
         expect(timelineData.batchUIDToMeasuresMap).toMatchInlineSnapshot(`
           Map {
-            1 => Array [
-              Object {
+            1 => [
+              {
                 "batchUID": 1,
                 "depth": 0,
                 "duration": 0,
-                "lanes": "0b0000000000000000000000000010000",
+                "lanes": "0b0000000000000000000000000100000",
                 "timestamp": 10,
                 "type": "render-idle",
               },
-              Object {
+              {
                 "batchUID": 1,
                 "depth": 0,
                 "duration": 0,
-                "lanes": "0b0000000000000000000000000010000",
+                "lanes": "0b0000000000000000000000000100000",
                 "timestamp": 10,
                 "type": "render",
               },
-              Object {
+              {
                 "batchUID": 1,
                 "depth": 0,
                 "duration": 0,
-                "lanes": "0b0000000000000000000000000010000",
+                "lanes": "0b0000000000000000000000000100000",
                 "timestamp": 10,
                 "type": "commit",
               },
-              Object {
+              {
                 "batchUID": 1,
                 "depth": 1,
                 "duration": 0,
-                "lanes": "0b0000000000000000000000000010000",
+                "lanes": "0b0000000000000000000000000100000",
                 "timestamp": 10,
                 "type": "layout-effects",
               },
-              Object {
+              {
                 "batchUID": 1,
                 "depth": 0,
                 "duration": 0,
-                "lanes": "0b0000000000000000000000000010000",
+                "lanes": "0b0000000000000000000000000100000",
                 "timestamp": 10,
                 "type": "passive-effects",
               },
             ],
-            2 => Array [
-              Object {
+            2 => [
+              {
                 "batchUID": 2,
                 "depth": 0,
                 "duration": 0,
-                "lanes": "0b0000000000000000000000000000001",
+                "lanes": "0b0000000000000000000000000000010",
                 "timestamp": 10,
                 "type": "render-idle",
               },
-              Object {
+              {
                 "batchUID": 2,
                 "depth": 0,
                 "duration": 0,
-                "lanes": "0b0000000000000000000000000000001",
+                "lanes": "0b0000000000000000000000000000010",
                 "timestamp": 10,
                 "type": "render",
               },
-              Object {
+              {
                 "batchUID": 2,
                 "depth": 0,
                 "duration": 0,
-                "lanes": "0b0000000000000000000000000000001",
+                "lanes": "0b0000000000000000000000000000010",
                 "timestamp": 10,
                 "type": "commit",
               },
-              Object {
+              {
                 "batchUID": 2,
                 "depth": 1,
                 "duration": 0,
-                "lanes": "0b0000000000000000000000000000001",
+                "lanes": "0b0000000000000000000000000000010",
                 "timestamp": 10,
                 "type": "layout-effects",
               },
-              Object {
+              {
                 "batchUID": 2,
                 "depth": 1,
                 "duration": 0,
-                "lanes": "0b0000000000000000000000000000001",
+                "lanes": "0b0000000000000000000000000000010",
                 "timestamp": 10,
                 "type": "passive-effects",
               },
@@ -2403,9 +2447,56 @@ describe('Timeline profiler', () => {
           }
         `);
       });
+
+      it('should generate component stacks for state update', async () => {
+        function CommponentWithChildren({initialRender}) {
+          Scheduler.unstable_yieldValue('Render ComponentWithChildren');
+          return <Child initialRender={initialRender} />;
+        }
+
+        function Child({initialRender}) {
+          const [didRender, setDidRender] = React.useState(initialRender);
+          if (!didRender) {
+            setDidRender(true);
+          }
+          Scheduler.unstable_yieldValue('Render Child');
+          return null;
+        }
+
+        renderRootHelper(<CommponentWithChildren initialRender={false} />);
+
+        expect(Scheduler).toFlushAndYield([
+          'Render ComponentWithChildren',
+          'Render Child',
+          'Render Child',
+        ]);
+
+        const timelineData = stopProfilingAndGetTimelineData();
+        expect(timelineData.schedulingEvents).toMatchInlineSnapshot(`
+          [
+            {
+              "lanes": "0b0000000000000000000000000100000",
+              "timestamp": 10,
+              "type": "schedule-render",
+              "warning": null,
+            },
+            {
+              "componentName": "Child",
+              "componentStack": "
+              in Child (at **)
+              in CommponentWithChildren (at **)",
+              "lanes": "0b0000000000000000000000000100000",
+              "timestamp": 10,
+              "type": "schedule-state-update",
+              "warning": null,
+            },
+          ]
+        `);
+      });
     });
 
     describe('when not profiling', () => {
+      // @reactVersion >=18.0
       it('should not log any marks', () => {
         renderHelper(<div />);
 

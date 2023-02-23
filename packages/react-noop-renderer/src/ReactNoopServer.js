@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,22 +18,22 @@ import type {ReactNodeList} from 'shared/ReactTypes';
 
 import ReactFizzServer from 'react-server';
 
-type Instance = {|
+type Instance = {
   type: string,
   children: Array<Instance | TextInstance | SuspenseInstance>,
   prop: any,
   hidden: boolean,
-|};
+};
 
-type TextInstance = {|
+type TextInstance = {
   text: string,
   hidden: boolean,
-|};
+};
 
-type SuspenseInstance = {|
+type SuspenseInstance = {
   state: 'pending' | 'complete' | 'client-render',
   children: Array<Instance | TextInstance | SuspenseInstance>,
-|};
+};
 
 type Placeholder = {
   parent: Instance | SuspenseInstance,
@@ -50,6 +50,9 @@ type Destination = {
   segments: Map<number, Segment>,
   stack: Array<Segment | Instance | SuspenseInstance>,
 };
+
+type Resources = null;
+type BoundaryResources = null;
 
 const POP = Buffer.from('/', 'utf8');
 
@@ -98,12 +101,18 @@ const ReactNoopServer = ReactFizzServer({
     return null;
   },
 
-  pushTextInstance(target: Array<Uint8Array>, text: string): void {
+  pushTextInstance(
+    target: Array<Uint8Array>,
+    text: string,
+    responseState: ResponseState,
+    textEmbedded: boolean,
+  ): boolean {
     const textInstance: TextInstance = {
       text,
       hidden: false,
     };
     target.push(Buffer.from(JSON.stringify(textInstance), 'utf8'), POP);
+    return false;
   },
   pushStartInstance(
     target: Array<Uint8Array>,
@@ -127,6 +136,14 @@ const ReactNoopServer = ReactFizzServer({
   ): void {
     target.push(POP);
   },
+
+  // This is a noop in ReactNoop
+  pushSegmentFinale(
+    target: Array<Uint8Array>,
+    responseState: ResponseState,
+    lastPushedText: boolean,
+    textEmbedded: boolean,
+  ): void {},
 
   writeCompletedRoot(
     destination: Destination,
@@ -247,13 +264,30 @@ const ReactNoopServer = ReactFizzServer({
   ): boolean {
     boundary.status = 'client-render';
   },
+
+  writePreamble() {},
+  writeHoistables() {},
+  writePostamble() {},
+
+  createResources(): Resources {
+    return null;
+  },
+
+  createBoundaryResources(): BoundaryResources {
+    return null;
+  },
+
+  setCurrentlyRenderingBoundaryResourcesTarget(resources: BoundaryResources) {},
+
+  prepareToRender() {},
+  cleanupAfterRender() {},
 });
 
 type Options = {
   progressiveChunkSize?: number,
   onShellReady?: () => void,
   onAllReady?: () => void,
-  onError?: (error: mixed) => void,
+  onError?: (error: mixed) => ?string,
 };
 
 function render(children: React$Element<any>, options?: Options): Destination {

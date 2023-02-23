@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -46,23 +46,23 @@ declare module 'ReactFlightDOMRelayServerIntegration' {
   ): void;
   declare export function close(destination: Destination): void;
 
-  declare export type ModuleMetaData = JSONValue;
-  declare export function resolveModuleMetaData<T>(
+  declare export type ClientReferenceMetadata = JSONValue;
+  declare export function resolveClientReferenceMetadata<T>(
     config: BundlerConfig,
     resourceReference: JSResourceReference<T>,
-  ): ModuleMetaData;
+  ): ClientReferenceMetadata;
 }
 
 declare module 'ReactFlightDOMRelayClientIntegration' {
   import type {JSResourceReference} from 'JSResourceReference';
 
-  declare export opaque type ModuleMetaData;
-  declare export function resolveModuleReference<T>(
-    moduleData: ModuleMetaData,
+  declare export opaque type ClientReferenceMetadata;
+  declare export function resolveClientReference<T>(
+    moduleData: ClientReferenceMetadata,
   ): JSResourceReference<T>;
   declare export function preloadModule<T>(
     moduleReference: JSResourceReference<T>,
-  ): void;
+  ): null | Promise<void>;
   declare export function requireModule<T>(
     moduleReference: JSResourceReference<T>,
   ): T;
@@ -79,23 +79,23 @@ declare module 'ReactFlightNativeRelayServerIntegration' {
   ): void;
   declare export function close(destination: Destination): void;
 
-  declare export type ModuleMetaData = JSONValue;
-  declare export function resolveModuleMetaData<T>(
+  declare export type ClientReferenceMetadata = JSONValue;
+  declare export function resolveClientReferenceMetadata<T>(
     config: BundlerConfig,
     resourceReference: JSResourceReference<T>,
-  ): ModuleMetaData;
+  ): ClientReferenceMetadata;
 }
 
 declare module 'ReactFlightNativeRelayClientIntegration' {
   import type {JSResourceReference} from 'JSResourceReference';
 
-  declare export opaque type ModuleMetaData;
-  declare export function resolveModuleReference<T>(
-    moduleData: ModuleMetaData,
+  declare export opaque type ClientReferenceMetadata;
+  declare export function resolveClientReference<T>(
+    moduleData: ClientReferenceMetadata,
   ): JSResourceReference<T>;
   declare export function preloadModule<T>(
     moduleReference: JSResourceReference<T>,
-  ): void;
+  ): null | Promise<void>;
   declare export function requireModule<T>(
     moduleReference: JSResourceReference<T>,
   ): T;
