@@ -15,7 +15,7 @@ import type {
   ClientReference,
   ClientReferenceKey,
   ServerReference,
-  ServerReferenceMetadata,
+  ServerReferenceId,
 } from './ReactFlightServerConfig';
 import type {ContextSnapshot} from './ReactFlightNewContext';
 import type {ThenableState} from './ReactFlightThenable';
@@ -73,6 +73,7 @@ import {
 } from './ReactFlightNewContext';
 
 import {
+  getIteratorFn,
   REACT_ELEMENT_TYPE,
   REACT_FORWARD_REF_TYPE,
   REACT_FRAGMENT_TYPE,
@@ -285,13 +286,17 @@ function serializeThenable(request: Request, thenable: Thenable<any>): number {
       pingTask(request, newTask);
     },
     reason => {
-      // TODO: Is it safe to directly emit these without being inside a retry?
+      newTask.status = ERRORED;
+      // TODO: We should ideally do this inside performWork so it's scheduled
       const digest = logRecoverableError(request, reason);
       if (__DEV__) {
         const {message, stack} = getErrorMessageAndStackDev(reason);
         emitErrorChunkDev(request, newTask.id, digest, message, stack);
       } else {
         emitErrorChunkProd(request, newTask.id, digest);
+      }
+      if (request.destination !== null) {
+        flushCompletedChunks(request, request.destination);
       }
     },
   );
@@ -590,8 +595,10 @@ function serializeServerReference(
   if (existingId !== undefined) {
     return serializeServerReferenceID(existingId);
   }
-  const serverReferenceMetadata: ServerReferenceMetadata =
-    resolveServerReferenceMetadata(request.bundlerConfig, serverReference);
+  const serverReferenceMetadata: {
+    id: ServerReferenceId,
+    bound: Promise<Array<any>>,
+  } = resolveServerReferenceMetadata(request.bundlerConfig, serverReference);
   request.pendingChunks++;
   const metadataId = request.nextChunkId++;
   // We assume that this object doesn't suspend.
@@ -1052,6 +1059,12 @@ export function resolveModelToJSON(
         isInsideContextValue = false;
       }
       return (undefined: any);
+    }
+    if (!isArray(value)) {
+      const iteratorFn = getIteratorFn(value);
+      if (iteratorFn) {
+        return Array.from((value: any));
+      }
     }
 
     if (__DEV__) {

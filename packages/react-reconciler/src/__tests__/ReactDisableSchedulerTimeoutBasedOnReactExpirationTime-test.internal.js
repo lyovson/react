@@ -5,6 +5,8 @@ let Scheduler;
 let Suspense;
 let scheduleCallback;
 let NormalPriority;
+let waitForAll;
+let waitFor;
 
 describe('ReactSuspenseList', () => {
   beforeEach(() => {
@@ -20,6 +22,10 @@ describe('ReactSuspenseList', () => {
 
     scheduleCallback = Scheduler.unstable_scheduleCallback;
     NormalPriority = Scheduler.unstable_NormalPriority;
+
+    const InternalTestUtils = require('internal-test-utils');
+    waitForAll = InternalTestUtils.waitForAll;
+    waitFor = InternalTestUtils.waitFor;
   });
 
   function Text(props) {
@@ -61,20 +67,12 @@ describe('ReactSuspenseList', () => {
     const root = ReactNoop.createRoot(null);
 
     root.render(<App show={false} />);
-    expect(Scheduler).toFlushAndYield([]);
+    await waitForAll([]);
 
-    if (gate(flags => flags.enableSyncDefaultUpdates)) {
-      React.startTransition(() => {
-        root.render(<App show={true} />);
-      });
-    } else {
+    React.startTransition(() => {
       root.render(<App show={true} />);
-    }
-    expect(Scheduler).toFlushAndYield([
-      'Suspend! [A]',
-      'Suspend! [B]',
-      'Loading...',
-    ]);
+    });
+    await waitForAll(['Suspend! [A]', 'Suspend! [B]', 'Loading...']);
     expect(root).toMatchRenderedOutput(null);
 
     Scheduler.unstable_advanceTime(2000);
@@ -90,13 +88,13 @@ describe('ReactSuspenseList', () => {
     });
 
     // This resolves A and schedules a task for React to retry.
-    await expect(Scheduler).toFlushAndYieldThrough(['Resolve A']);
+    await waitFor(['Resolve A']);
 
     // The next task that flushes should be the one that resolves B. The render
     // task should not jump the queue ahead of B.
-    await expect(Scheduler).toFlushAndYieldThrough(['Resolve B']);
+    await waitFor(['Resolve B']);
 
-    expect(Scheduler).toFlushAndYield(['A', 'B']);
+    await waitForAll(['A', 'B']);
     expect(root).toMatchRenderedOutput('AB');
   });
 });
